@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Anton&family=Lato:wght@100;300;400;700;900&family=Open+Sans:wght@300;400;600;700&family=Platypi:wght@300;400;700&family=Prompt:wght@100;200;300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.7.2/axios.min.js"
+        integrity="sha512-JSCFHhKDilTRRXe9ak/FJ28dcpOJxzQaCd3Xg8MyF6XFjODhy/YMCM8HW0TFDckNHWUewW+kfvhin43hKtJxAw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        body {
+            font-family: "Open Sans", Arial, Helvetica, sans-serif;
+            background-color: rgb(251, 251, 251);
+        }
+
+        .card {
+            background-color: rgb(227, 227, 227);
+            width: 500px;
+            border-radius: 20px;
+            box-shadow: 2px 2px 20px gray;
+            margin-bottom: 20px;
+            padding: 10px
+        }
+
+        #this-card {
+            padding: 15px;
+            height: 200px;
+        }
+
+        #search-container {
+            border-radius: 8px;
+        }
+
+        input[type=text],
+        .inputlike {
+            width: 300px;
+            border: none;
+            font-family: "Open Sans", Arial, Helvetica, sans-serif;
+            height: 50px;
+            margin: 0;
+            border-radius: 10px 0px 0px 10px;
+            font-size: 20px;
+            display: inline
+        }
+
+        .inputlike {
+            border-radius: 10px !important;
+            font-size: 30px;
+        }
+
+        textarea {
+            width: 300px;
+            border: none;
+            font-family: "Open Sans", Arial, Helvetica, sans-serif;
+            height: 50px;
+            margin: 0;
+            border-radius: 10px;
+            font-size: 12px;
+            resize: none;
+        }
+
+        button {
+            width: 100px;
+            border: none;
+            font-family: "Open Sans", Arial, Helvetica, sans-serif;
+            background-color: rgb(69, 43, 187);
+            color: white;
+            height: 50px;
+            margin: 0;
+            border-radius: 0px 10px 10px 0px;
+        }
+
+        button:hover {
+            opacity: 0.8;
+        }
+
+        @keyframes fwhoom {
+            from {
+                transform: scale(1);
+                box-shadow: 2px 2px 20px gray;
+            }
+
+            to {
+                transform: scale(1.2);
+                box-shadow: 2px 2px 20px rgb(41, 41, 41);
+            }
+        }
+
+        @keyframes moohwf {
+            from {
+                transform: scale(1.05);
+                box-shadow: 2px 2px 20px rgb(41, 41, 41);
+            }
+
+            to {
+                transform: scale(1);
+                box-shadow: 2px 2px 20px gray;
+            }
+        }
+
+        .hovered {
+            animation-name: fwhoom;
+            animation-duration: 0.1s;
+            animation-timing-function: linear;
+            animation-iteration-count: 1;
+            animation-fill-mode: forwards;
+        }
+
+        .novered {
+            animation-name: moohwf;
+            animation-duration: 0.1s;
+            animation-timing-function: linear;
+            animation-iteration-count: 1;
+            animation-fill-mode: forwards;
+        }
+
+        td[colspan="2"] button {
+            border-radius: 10px;
+            width: 100%;
+            font-size: 18px;
+        }
+
+        #table input,
+        #table button {
+            border-radius: 10px;
+            margin: 2px;
+        }
+
+        select {
+            height: 30px;
+            width: 60px;
+            background-color: rgb(216, 216, 216);
+            font-family: "Open Sans", Arial, Helvetica, sans-serif;
+            border-radius: 5px;
+            border: none;
+        }
+
+        .biggy {
+            border-radius: 10px;
+            height: 150px;
+            width: 300px;
+            font-size: 20px;
+        }
+
+        #starter > div{
+            height: 180px;
+            width: 40%;
+            font-size: 30px;
+            margin-top: 50px;
+        }
+
+        .black {
+            background-color: black;
+        }
+
+        .ghost {
+            height: 50%;
+        }
+    </style>
+</head>
+
+<body>
+    <center>
+        <div id="starter">
+            <h1 style="font-size: 50px;">Task Manager Baby 2.0</h1>
+            <div id="create" class="card" style="background-color: aquamarine;">
+                <h1>Create Account</h1>
+            </div>
+            <div id="login" class="card"  style="background-color: bisque;">
+                <h1>Login</h1>
+            </div>
+        </div>
+        <div id="loginer" style="display: none">
+            <div class="card">
+                <h1>Login With Existing Account Number</h1>
+                <input placeholder="number" type="text" class="inputlike" id="numb"><br>
+                <button style="border-radius: 10px; margin-top: 20px;" onclick="fetchTasks(document.getElementById('numb').value)">Login</button>
+            </div>
+            <button class="black"style="border-radius: 10px; margin-top: 20px; color:white" onclick="back()">Back</button>
+        </div>
+        <div id="container" style="display:none">
+            <h1 class="big-h1">Task Manager Baby 2.0</h1>
+            <div class="card" id="this-card">
+                <h2>Create Task</h2>
+                <textarea placeholder="description here..." id="desc"></textarea>
+                <div id="search-container">
+                    <input placeholder="task name" id="name" type="text">
+                    <button id="search" class="button" onclick="createTask()">Create Task</button>
+                </div>
+                <table id="table" width="500" class="card" style=" margin-top: 100px; text-align: center;">
+                    <tr>
+                        <td colspan="2">
+                            <h1>Filter Tasks</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td width="200" height=50 style="background-color: white; border-radius: 10px;">
+                            <h4 style="display: inline; opacity: 0.6;">Completed</h4><select id="checky"
+                                style="display: inline;">
+                                <option>N/A</option>
+                                <option>Yes</option>
+                                <option>No</option>
+                            </select>
+                        </td>
+                        <td width="300"><input placeholder="starts with" type="text" id="sw"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"><button
+                                onclick="fetchTasks(Account,document.getElementById('checky'),document.getElementById('sw').value)">Filter
+                                Tasks</button></td>
+                    </tr>
+                </table>
+                <div id="cards" style="margin-top: 100px;"></div>
+                <button style="border-radius: 10px;" onclick="settings()">Account Settings</button>
+            </div>
+        </div>
+        <div id="settings" style="display:none">
+            <h1>Account Settings</h1>
+            <div class="card">
+                <h2 id="numberhere"></h2>
+                <button style="border-radius: 10px; background-color:red" onclick="logout()">Logout</button>
+            </div>
+            <button class="black" style="border-radius: 10px; margin-top: 20px;" onclick="idk()">Back</button>
+        </div>
+        <h1 style="display:none" id="ERROR">There Was An Error Fetching The Data. Please Refresh And Try Again.</h1>
+        <div id="specific" style="display: none;">
+            <h1 id="tasky"></h1>
+            <div class="card">
+                <h3>Name</h3>
+                <h1 id="daimput"></h1>
+                <h3>Description</h3>
+                <textarea class="biggy" id="descy"></textarea><br>
+                <h3 style="display: inline; margin-right: 10px; margin-top: 10px;">Completed</h3><input type="checkbox"
+                    id="checker" style="display: inline; margin-top: 10px;"><br>
+                <button onclick="edit(document.getElementById('idk').textContent)"
+                    style="width: 95%; border-radius: 10px ; margin-top: 10px;">Edit Task</button>
+                <button onclick="DELETE(document.getElementById('idk').textContent)"
+                    style="background-color: rgb(151, 0, 0); width: 95%; border-radius: 10px; margin-top: 10px;" >Delete
+                    Task</button>
+                <p id="idk" style="display: none;"></p>
+            </div>
+            <button style="border-radius: 5px; width: 300px; height:100px; background-color: black;" onclick="location.reload()">Back To Tasks</button>
+        </div>
+
+    </center>
+    <script>
+        var Account
+
+        function fwhoom(element){
+            return function(){
+                element.classList.add("hovered")
+                element.classList.remove("novered")
+                console.log(element.classList)
+            }
+        }
+
+        function moowf(element){
+            return function(){
+                element.classList.add("novered")
+                element.classList.remove("hovered")
+                console.log(element.classList)
+            }
+        }
+
+        function settings(){
+            document.getElementById("container").style.display = "none"
+            document.getElementById("settings").style.display = "block"
+            document.getElementById("numberhere").textContent = `Account Number: ${Account}`
+        }
+
+        function logout(){
+            localStorage.clear()
+            location.reload()
+        }
+
+        async function fetchTasks(account, completed = undefined, startsWith = undefined) {
+            Account = account
+            localStorage.setItem("account", Account)
+            try {
+                const cardsContainer = document.getElementById('cards');
+                document.getElementById(cardsContainer.innerHTML = "")
+
+                try {
+                    console.log(completed)
+                    if (completed.selectedIndex == 1) {
+                        completed = "true"
+                    } else if (completed.selectedIndex == 2) {
+                        completed = "false"
+                    } else if (completed.selectedIndex == 0) {
+                        completed = "undefined"
+                    }
+                } catch (error) {
+                    completed = completed
+                }
+
+                var response = await axios.get(`/api/v1/tasks/${Account}?completed=${completed}`)
+                console.log(completed)
+
+                if (startsWith != "" && startsWith) {
+                    response = await axios.get(`/api/v1/tasks/${Account}?completed=${completed}&startswith=${startsWith}`);
+                    console.log("in startsWith != nothing")
+                }
+
+                const elements = response.data.tasks;
+                console.log(elements)
+                elements.forEach(element => {
+                    const card = document.createElement("div");
+                    if (element.description) {
+                        if(element.description.length > 59){
+                            card.innerHTML = `<h1>${element.name}</h1><p style="opacity:0.6"><i>${element.description.slice(0, 60)}...</i></p></td></tr></table>`;
+                        } else {
+                            card.innerHTML = `<h1>${element.name}</h1><p style="opacity:0.6"><i>${element.description}</i></p></td></tr></table>`;
+                        }
+                       
+                    } else {
+                        card.innerHTML = `<h1>${element.name}</h1><p></p>`;
+                    }
+
+                    if (element.completed == true) {
+                        card.style.backgroundColor = "#00e63d"
+                    }
+
+                    card.classList.add("card");
+                    card.style.height = "100px"
+                    card.style.marginTop = "30px"
+
+                    card.addEventListener("mouseover", fwhoom(card));
+
+                    card.addEventListener("mouseout", moowf(card));
+
+                    card.addEventListener("click", () => {
+                        document.getElementById("container").style.display = "none"
+                        document.getElementById("specific").style.display = "block"
+                        document.getElementById("daimput").textContent = element.name
+                        document.getElementById("tasky").textContent = "Edit Task " + element.name
+                        document.getElementById("descy").textContent = element.description
+                        document.getElementById("checker").checked = element.completed
+                        document.getElementById("idk").textContent = element._id
+                    });
+
+                    cardsContainer.appendChild(card);
+                });
+
+                if (elements.length == 0) {
+                    cardsContainer.innerHTML = "<h1>No tasks met that search</h1>"
+                }
+
+                document.getElementById("loginer").style.display = "none"
+                document.getElementById("container").style.display = "block"
+            } catch (error) {
+                return alert(error.response.data.msg)
+                document.getElementById("container").style.display = "none"
+                document.getElementById("ERROR").style.display = "block"
+                console.error(error)
+            }
+
+        }
+
+        function idk(){
+            document.getElementById("settings").style.display = "none"
+            document.getElementById("container").style.display = "block"
+            fetchTasks(Account)
+        }
+
+        async function createTask() {
+            try{
+                const result = await axios.put("/api/v1/tasks/"+Account, { name: document.getElementById("name").value, description: document.getElementById("desc").value })
+                console.log(result)
+                alert("task successfully created")
+                await fetchTasks(Account)
+            } catch(error){
+                alert(error.response.data.msg)
+            }
+        }
+
+        function back(){
+            document.getElementById("loginer").style.display = "none"
+            document.getElementById("starter").style.display = "block"
+        }
+
+        async function edit(task) {
+            try{
+                console.log(document.getElementById('daimput').textContent)
+                console.log(document.getElementById('descy').value)
+                console.log(document.getElementById('checker').checked)
+                await axios.patch(`/api/v1/tasks/${Account}/${document.getElementById('daimput').textContent}`, { description: document.getElementById('descy').value, completed: document.getElementById('checker').checked })
+                alert("task successfully edited")
+            } catch(error){
+                alert(error.response.data.msg)
+            }
+            location.reload()
+        }
+
+        async function DELETE(task) {
+            console.log(task)
+            await axios.delete(`/api/v1/tasks/${Account}/${document.getElementById('daimput').textContent}`)
+            alert("task successfully deleted")
+            location.reload()
+        }
+
+        function main() {
+            const idk = (localStorage.getItem("account") == null || localStorage.getItem("account") == "null")
+
+            if(localStorage.getItem("account") != "undefined" && (!idk)){
+                document.getElementById("starter").style.display = "none"
+                document.getElementById("container").style.display = "block"
+                console.log("noooo")
+                return fetchTasks(localStorage.getItem("account"))
+            }
+
+            function disapear(){
+                document.getElementById("starter").style.display = "none"
+            }
+
+            document.getElementById("create").addEventListener("mouseover",fwhoom(document.getElementById("create")))
+            document.getElementById("create").addEventListener("mouseout",moowf(document.getElementById("create")))
+            document.getElementById("login").addEventListener("mouseover",fwhoom(document.getElementById("login")))
+            document.getElementById("login").addEventListener("mouseout",moowf(document.getElementById("login")))
+            document.getElementById("container").style.display = "none"
+            document.getElementById("create").addEventListener("click",async () => {
+                disapear()
+                document.getElementById("container").style.display = "block"
+                const number =  Math.floor(Math.random()*999999999000+1000)
+                console.log(number)
+                await axios.post("/api/v1/tasks/accounts", { number:number})
+                fetchTasks(number)
+                alert(`New account created with number ${number}.`)
+            })
+            document.getElementById("login").addEventListener("click", () => {
+                disapear()
+                document.getElementById("loginer").style.display = "block"
+            })
+        }
+
+        main()
+    </script>
+</body>
+
+</html>
