@@ -1,11 +1,13 @@
 const express = require("express")
 const router = express.Router()
+const cors = require("cors")
 
-const {createTask, getTasks, reqbodyGoodMW, updateTask, deleteTask, createAccount} = require("../controllers/tasks")
+const {getQuiz, reqbodyGoodMW, createQuiz} = require("../controllers/tasks")
+router.use(cors())
 router.use(express.json())
  
-router.route("/:id").get(getTasks).put(reqbodyGoodMW("add"),createTask)
-router.route("/:id/:task").patch(reqbodyGoodMW("update"),updateTask).delete(deleteTask)
-router.route("/accounts").post(createAccount)
+router.route("/:id").get(getQuiz)
+router.route("/").post(createQuiz)
  
 module.exports = router    
+

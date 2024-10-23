@@ -2,10 +2,12 @@ const express = require("express")
 const app = express()
 const router = require("./routes/tasks.js")
 const connect = require("./db/connect")
+const cors = require("cors")
 const notFound = require("./middleware/notfound.js")
 const handler = require("./middleware/handler.js")
 require("dotenv").config() 
- 
+
+app.use(cors())
 app.use(express.json())
 app.use("/frontend",express.static("./public"))
 app.use("/api/v1/tasks", router)

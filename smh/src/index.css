@@ -1,0 +1,54 @@
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+}
+
+@media (orientation:landscape){
+  #question{ height:440px}
+}
+
+@media (orientation:portrait){
+  #question{ height:640px}
+}
+
+#question > div > div > input{
+  margin-right: 20px;
+}
+
+#red, #red1, #red2 {
+  background-color: red;
+  color: white; 
+  border: none; 
+  border-radius: 5px;
+  font-size: 16px; 
+  cursor: pointer;
+  height: 30px;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  margin-left: 20px;
+}
+
+#blue, #blue1, #blue2, #blue3, #blue4 {
+  background-color: rgb(76, 0, 255);
+  color: white; 
+  border: none; 
+  border-radius: 5px;
+  font-size: 16px; 
+  cursor: pointer;
+  height: 30px;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  margin-left: 20px;
+}
+
+#green, #green1 {
+  background-color: rgb(9, 255, 0);
+  color: white; 
+  border: none; 
+  border-radius: 5px;
+  font-size: 16px; 
+  cursor: pointer;
+  height: 30px;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;;
+}
+
+button:hover {
+  opacity: 0.9; 
+}

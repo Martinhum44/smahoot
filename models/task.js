@@ -1,35 +1,20 @@
 const aMONGOOSE = require("mongoose")
 
-const taskSchema = new aMONGOOSE.Schema({
+const quizModel = new aMONGOOSE.Schema({
+    questions:{
+        type: [Object],
+        required: [true, "questions were not provided"]
+    },
     name:{
+        type: String,
+        required: [true, "name was not provided"],
+        maxlength: [50, "name cannot be greater than 50 characters"]
+    },
+    quizId:{
         type:String,
-        required:[true,"must provide name"],
-        minlength:[1,"name must be at least 1 character long"],
-        maxlength:[20,"name cannot be longer than 20 characters"]
-    },  
-    description:{    
-        type:String,
-        required:false,
-        minlength:[1,"description must be at least 1 character long"],
-        maxlength:[250,"name cannot be longer than 20 characters"]
-    },  
-    completed:{
-        type:Boolean,
-        default:false
-    },   
+        default: String(Math.floor(Math.random()*10**16)),
+        maxlength: [20, "QuizId cannot be longer than 16 characters"]
+    }
 })
 
-const accountSchema = new aMONGOOSE.Schema({
-    number:{
-        type:String,
-        required:[true,"must provide number"],
-        minlength:[4,"number must be at least 4 characters long"],
-        maxlength:[20,"number cannot be longer than 20 characters"]
-    },
-    tasks:{
-        type:[Object], 
-        default:[]
-    }   
-}) 
- 
-module.exports = {task:aMONGOOSE.model("Task",taskSchema),account:aMONGOOSE.model("Account",accountSchema)}
+module.exports = {quiz: aMONGOOSE.model("Quiz",quizModel)}
