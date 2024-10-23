@@ -34,7 +34,10 @@ io.on("connection", (socket) => {
             return socket.emit("error", `Player ${player} has already joined`);
         }
         games[pin].players.push({ name: player, score: 0 });
-        socket.emit("joinReturn", player); 
+        socket.emit("joinReturn", { name: player, score: 0 }); 
+        io.emit("joinReturnHost", { name: player, score: 0 });
+        console.log(games[pin].players)
+        console.log(games)
 })}) 
 
 const createQuiz = asyncW(async (req, res, next) => {

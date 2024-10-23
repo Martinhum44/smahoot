@@ -1,61 +1,53 @@
-import React, { useState, useEffect } from 'react'
-import axios from "axios"
-import QuestionBuilder from "./QuestionBuilder.jsx"
-import './App.css'
-import { io } from 'socket.io-client'
+import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
+import QuestionBuilder from './QuestionBuilder.jsx';
+import './App.css';
+import { io } from 'socket.io-client';
 
 function App() {
-  const socket = io("http://localhost:5000/")
-  const [questions, setQuestions] = useState({}) 
-  const [questAmount, setQuestAmount] = useState([])
-  const [allOk, setAllOk] = useState(false)
-  const [name, setName] = useState("")
-  const [creating, setCreating] = useState("select")
-  const [pin, setPin] = useState(null)
-  const [players, setPlayers] = useState(null)
+  const socket = useRef("http://localhost:5000");
+  const [questions, setQuestions] = useState({});
+  const [questAmount, setQuestAmount] = useState([]);
+  const [allOk, setAllOk] = useState(false);
+  const [name, setName] = useState('');
+  const [creating, setCreating] = useState('select');
+  const [pin, setPin] = useState(null);
+  const [players, setPlayers] = useState([]);
+  const [user, setUser] = useState(null);
+  socket.current = io("http://localhost:5000")
+
   useEffect(() => {
-    let aok = true
-    if(name == ""){
-      aok = false
+    let aok = true;
+    if (name === '') {
+      aok = false;
     }
-    for(const key in questions){
-      if (questions.hasOwnProperty(key)){
-        console.log(questions[key].ok)
-        if(!questions[key].ok){
-          aok = false
-          break
-        }
+    for (const key in questions) {
+      if (questions[key] && !questions[key].ok) {
+        aok = false;
+        break;
       }
     }
-    setAllOk(aok)
-    console.log(questions)
-  }, [questions, name])
+    setAllOk(aok);
+  }, [questions, name]);
 
-  useEffect(() => console.log(questAmount),[questAmount])
-  function createQuestion(){
-    console.log("ghj")
-    if (questAmount.length == 0){
-      setQuestAmount([0])
+  function createQuestion() {
+    if (questAmount.length === 0) {
+      setQuestAmount([0]);
     } else {
-      setQuestAmount(qa => [...qa, qa[qa.length-1]+1]) 
+      setQuestAmount((qa) => [...qa, qa[qa.length - 1] + 1]);
     }
   }
 
-  async function CQ(){
-    try{
-      let Questions = []
-      for(const key in questions){
-        Questions.push(questions[key])
-      }
-      console.log(Questions)
-      await axios.post("http://localhost:3000/api/v1/tasks",{questions:Questions,name})
-      alert("Created Quiz Successfully")
-      setCreating("finished")
-    } catch(e){
-      console.error(e)
-      alert("ERROR: "+e.response.data.msg)
+  async function CQ() {
+    try {
+      const Questions = Object.values(questions);
+      await axios.post('http://localhost:3000/api/v1/tasks', { questions: Questions, name });
+      alert('Created Quiz Successfully');
+      setCreating('finished');
+    } catch (e) {
+      console.error(e);
+      alert('ERROR: ' + e.response.data.msg);
     }
-    
   }
 
   return (
@@ -108,11 +100,16 @@ function App() {
 
           setPin(quizDetails.data.gamePin)
           console.log(quizDetails)
+          if (players == null){
+            setPlayers([])
+          }
+          console.log(socket)
+          socket.current.on('joinReturnHost', (data) => {
+            console.log('join return', data);
+            setPlayers(p => [...p, data.name]);
+          });
+
           setCreating("hosting")
-          setPlayers([])
-          socket.on("joinReturn", p => {
-            setPlayers(pls => [...pls, p])
-          })
         }}> Host Smashoot! </button>
       </div>
 
@@ -120,7 +117,7 @@ function App() {
         <h1>Game Pin: {pin}</h1><br/><br/>
         <h3>Smashooters</h3>
         <center><div style={{width:"50%", backgroundColor:"lightgray", height:"300px", overflowY:"scroll", borderRadius:"10px"}}>{players == null ? "" : players.map(p => <p>{p}</p>)}</div><br />
-        <button id="blue3" style={{ width: "250px", display: "block" }} onClick={() => {}}> Start Smashoot! </button>
+        <button id="blue3" style={{ width: "250px", display: players != null && players.length == 0 ? "none" : "block", }} onClick={() => {}}> Start Smashoot! </button>
         </center>
       </div>
 
@@ -130,22 +127,27 @@ function App() {
         <input id="displayName" onChange={(e) => setName(e.target.value)} placeholder="Display Name: " style={{border: "none", width: "70%", height: "100px", fontSize: "50px", backgroundColor: "#CECECE", borderRadius: "5px", fontFamily: "Inter, system-ui, Avenir, Helvetica, Arial, sans-serif", marginBottom:"50px"}}/> <br/>
         <center><br />
         <button id="blue4" style={{ width: "250px", display: "block" }} onClick={() => {
-          socket.emit("join",{player:document.getElementById("displayName").value,pin:document.getElementById("gamePin").value})
-          socket.on("error", e => {
+          socket.current.emit("join",{player:document.getElementById("displayName").value,pin:document.getElementById("gamePin").value})
+          console.log(socket)
+          socket.current.on("error", e => {
             console.log(e)
             alert(e)
           })
-          socket.on("joinReturn", (p) => { 
+          socket.current.on("joinReturn", (p) => { 
             console.log(p)
-            if (p == document.getElementById("displayName").value){
+            if (p.name == document.getElementById("displayName").value){
               setCreating("joined")
+              setUser(p)
             }
           })
         }}> Join Smashoot! Game </button>
         </center>
       </div>
 
-      <div></div>
+      <div style={{display: creating == "joined" ? "block" : "none"}}>
+        <h1>Game Joined!</h1>
+        <p>Do you see your name on screen {user != null && user.name}? </p>
+      </div>
     </>
   )
 }
