@@ -19,6 +19,9 @@ function App() {
   const [userName, setUserName] = useState(null)
   const [countdown, setCountdown] = useState(5)
   const [questionIndex, setQuestionIndex] = useState(null)
+  const [score, setScore] = useState(null)
+  const [currentlyAnswered,setCurrentlyAnswered] = useState(null)
+  const [rightOrWrong,setRightOrWrong] = useState(null)
   socket.current = io("http://localhost:5000")
 
   useEffect(() => {
@@ -45,6 +48,25 @@ function App() {
         setGameQuestions(data.quiz)
       }
     });
+
+    function func(objReturned) {
+      console.log(objReturned)
+      console.log("in func", objReturned.game, pin);
+      console.log(objReturned.game == pin)
+      if (objReturned.game == pin) {
+        setCurrentlyAnswered(prevCount => {
+          const newCount = prevCount + 1;
+          console.log(newCount, players.length);
+          if (newCount === players.length) {
+            socket.current.emit("leaderboard", pin);
+            setCreating("leaderboard");
+            return 0;
+          }
+          return newCount;
+        });
+      }
+    }
+    socket.current.on("submitReturn",func)
   },[pin])
 
   useEffect(() => {
@@ -66,7 +88,6 @@ function App() {
       })
 
       socket.current.on("startGameReturn", (pinR) => {
-        console.log(gameQuestions.questions[0])
         console.log("papi",pinR, game)
         if(pinR == game){
           setQuestionIndex(0)
@@ -168,6 +189,7 @@ function App() {
               setInterval(() => {
                 setCountdown(c => c > 0 ? c-1 : 0); 
               },1000)
+              setCurrentlyAnswered(0)
             }
           })
         }}> Start Smashoot! </button>
@@ -200,6 +222,7 @@ function App() {
               setGame(document.getElementById("gamePin").value)
               setGameQuestions(p.quiz)
               setUserName(p.name)
+              setScore(0)
             }
           })
         }}> Join Smashoot! Game </button>
@@ -216,14 +239,50 @@ function App() {
       </div>
 
       <div style={{display: creating == "questions" ? "block" : "none"}}>
+        <h3>Answered: {currentlyAnswered}/{players.length}</h3>
         <h1 style={{fontSize: "50px"}}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].title: "" }</h1>
+        <button id="bigGreen">{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[0].body: ""}</button>
+        <button id="bigBlue">{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[1].body: ""}</button>
+        <button id="bigRed">{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[2].body: ""}</button>
+        <button id="bigYellow">{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[3].body: ""}</button>
       </div>
 
-      <div style={{display: creating == "questionTime" ? "block" : "none"}}>
+      <div style={{display: creating == "questionTime" ? "block" : "none"}}>     
+        <h3>{userName}'s Game | Score: {score}</h3>
         <h1 style={{fontSize: "50px"}}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].title: "" }</h1>
+        <button id="bigGreen" onClick={() => submitHandler(gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[0].rightOne: false)}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[0].body: ""}</button>
+        <button id="bigBlue" onClick={() => submitHandler(gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[1].rightOne: false)}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[1].body: ""}</button>
+        <button id="bigRed" onClick={()=>submitHandler(gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[2].rightOne: false)}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[2].body: ""}</button>
+        <button id="bigYellow" onClick={() => submitHandler(gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[3].rightOne: false)}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[3].body: ""}</button>
+      </div>
+
+      <div style={{display:creating == "waitingForOthers" ? "block": "none"}}>
+        <h3>{userName}'s Game | Score: {score}</h3>
+        <h1>Waiting For Others To Respond...</h1>
+      </div>
+
+      <div style={{display:creating == "rightOrWrong" ? "block": "none"}}>
+        <h1 style={{fontSize:"120px", color:rightOrWrong ? "green" : "red"}}>{rightOrWrong ? "Correct :D" : "Incorrect :("}</h1>
       </div>
     </>
   )
+  function submitHandler(rightOrWrong){
+    console.log("In sumbit handler", rightOrWrong)
+    if(rightOrWrong == true){
+      setScore(s => s+1000)
+      console.log("RIGHT")
+      setRightOrWrong(true)
+    } else {
+      setRightOrWrong(false)
+    }
+    socket.current.emit("submit",{game:game,name:userName,answer:rightOrWrong,newScore:score})
+    setCreating("waitingForOthers")
+    socket.current.on("leaderboard",pin => {
+      if(pin == game){
+        setCreating("rightOrWrong")
+      }
+    })
+  }
 }
 
 export default App

@@ -14,7 +14,7 @@
   margin-right: 20px;
 }
 
-#red, #red1, #red2 {
+#red, #red1, #red2, #bigRed {
   background-color: red;
   color: white; 
   border: none; 
@@ -26,7 +26,7 @@
   margin-left: 20px;
 }
 
-#blue, #blue1, #blue2, #blue3, #blue4 {
+#blue, #blue1, #blue2, #blue3, #blue4, #bigBlue {
   background-color: rgb(76, 0, 255);
   color: white; 
   border: none; 
@@ -38,7 +38,7 @@
   margin-left: 20px;
 }
 
-#green, #green1 {
+#green, #green1, #bigGreen {
   background-color: rgb(9, 255, 0);
   color: white; 
   border: none; 
@@ -47,6 +47,25 @@
   cursor: pointer;
   height: 30px;
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;;
+}
+
+#bigYellow {
+  background-color: rgb(255, 255, 0);
+  color: white; 
+  border: none; 
+  border-radius: 5px;
+  font-size: 16px; 
+  cursor: pointer;
+  height: 30px;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+}
+
+#bigGreen, #bigBlue, #bigYellow, #bigRed{
+  color:black;
+  height: 250px;
+  width: 48%;
+  margin: 0px;
+  font-size: 50px;
 }
 
 button:hover {

@@ -47,6 +47,14 @@ io.on("connection", (socket) => {
     socket.on("startGame", (pin) => {
         io.emit("startGameReturn",pin)
     })
+
+    socket.on("submit", (obj) => {
+        io.emit("submitReturn",obj)
+    })
+
+    socket.on("leaderboard", (pin) => {
+        io.emit("leaderboardReturn",pin)
+    })
 }) 
 
 const createQuiz = asyncW(async (req, res, next) => {
