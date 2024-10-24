@@ -18,6 +18,7 @@ function App() {
   const [gameQuestions, setGameQuestions] = useState(null)
   const [userName, setUserName] = useState(null)
   const [countdown, setCountdown] = useState(5)
+  const [questionIndex, setQuestionIndex] = useState(null)
   socket.current = io("http://localhost:5000")
 
   useEffect(() => {
@@ -46,13 +47,34 @@ function App() {
     });
   },[pin])
 
+  useEffect(() => {
+    console.log(countdown)
+    if (countdown == 0) {
+      socket.current.emit("startGame",pin)
+      setQuestionIndex(0)
+      return setCreating("questions")
+    }},[countdown]
+  )
+
   useEffect(
-    () => {socket.current.on("gameOnReturn", (pinR) => {
-    console.log(pinR, game)
-    if(pinR == game){
-      setCreating("playing")
+    () => {
+      socket.current.on("gameOnReturn", (pinR) => {
+        console.log(pinR, game)
+        if(pinR == game){
+          setCreating("playing")
+        }
+      })
+
+      socket.current.on("startGameReturn", (pinR) => {
+        console.log(gameQuestions.questions[0])
+        console.log("papi",pinR, game)
+        if(pinR == game){
+          setQuestionIndex(0)
+          setCreating("questionTime")
+        }
+      })
     }
-  })},[game])
+    ,[game])
 
   function createQuestion() {
     if (questAmount.length === 0) {
@@ -143,7 +165,9 @@ function App() {
             if (pinR == pin){
               setCreating("gameOn")
 
-              setInterval(() => setCountdown(c => c > 0 ? c-1 : 0),1000)
+              setInterval(() => {
+                setCountdown(c => c > 0 ? c-1 : 0); 
+              },1000)
             }
           })
         }}> Start Smashoot! </button>
@@ -189,6 +213,14 @@ function App() {
 
       <div style={{display: creating == "playing" ? "block" : "none"}}>
         <h1 style={{fontSize: "70px"}}>The game will start at any moment!</h1>
+      </div>
+
+      <div style={{display: creating == "questions" ? "block" : "none"}}>
+        <h1 style={{fontSize: "50px"}}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].title: "" }</h1>
+      </div>
+
+      <div style={{display: creating == "questionTime" ? "block" : "none"}}>
+        <h1 style={{fontSize: "50px"}}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].title: "" }</h1>
       </div>
     </>
   )

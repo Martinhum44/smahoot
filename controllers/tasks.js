@@ -43,6 +43,10 @@ io.on("connection", (socket) => {
     socket.on("gameOn", (pin) => {
         io.emit("gameOnReturn",pin)
     })
+
+    socket.on("startGame", (pin) => {
+        io.emit("startGameReturn",pin)
+    })
 }) 
 
 const createQuiz = asyncW(async (req, res, next) => {
