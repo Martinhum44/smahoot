@@ -14,6 +14,10 @@ function App() {
   const [pin, setPin] = useState(null);
   const [players, setPlayers] = useState([]);
   const [user, setUser] = useState(null);
+  const [game, setGame] = useState(null)
+  const [gameQuestions, setGameQuestions] = useState(null)
+  const [userName, setUserName] = useState(null)
+  const [countdown, setCountdown] = useState(5)
   socket.current = io("http://localhost:5000")
 
   useEffect(() => {
@@ -29,6 +33,26 @@ function App() {
     }
     setAllOk(aok);
   }, [questions, name]);
+
+  useEffect(() => {
+    socket.current.on('joinReturnHost', (data) => {
+      console.log('join return', data);
+      console.log(data.pin, pin)
+      if(data.pin == pin){
+        console.log(data.pin, pin)
+        setPlayers(p => [...p, data.name]);
+        setGameQuestions(data.quiz)
+      }
+    });
+  },[pin])
+
+  useEffect(
+    () => {socket.current.on("gameOnReturn", (pinR) => {
+    console.log(pinR, game)
+    if(pinR == game){
+      setCreating("playing")
+    }
+  })},[game])
 
   function createQuestion() {
     if (questAmount.length === 0) {
@@ -104,11 +128,6 @@ function App() {
             setPlayers([])
           }
           console.log(socket)
-          socket.current.on('joinReturnHost', (data) => {
-            console.log('join return', data);
-            setPlayers(p => [...p, data.name]);
-          });
-
           setCreating("hosting")
         }}> Host Smashoot! </button>
       </div>
@@ -117,8 +136,24 @@ function App() {
         <h1>Game Pin: {pin}</h1><br/><br/>
         <h3>Smashooters</h3>
         <center><div style={{width:"50%", backgroundColor:"lightgray", height:"300px", overflowY:"scroll", borderRadius:"10px"}}>{players == null ? "" : players.map(p => <p>{p}</p>)}</div><br />
-        <button id="blue3" style={{ width: "250px", display: players != null && players.length == 0 ? "none" : "block", }} onClick={() => {}}> Start Smashoot! </button>
+        <button id="blue3" style={{ width: "250px", display: players != null && players.length == 0 ? "none" : "block", }} onClick={() => {
+          socket.current.emit("gameOn", pin)
+
+          socket.current.on("gameOnReturn",pinR => {
+            if (pinR == pin){
+              setCreating("gameOn")
+
+              setInterval(() => setCountdown(c => c > 0 ? c-1 : 0),1000)
+            }
+          })
+        }}> Start Smashoot! </button>
         </center>
+      </div>
+
+      <div style={{display:creating == "gameOn" ? "block" : "none"}}>
+        <h1>Game On!</h1>
+        <h3 style={{color:"red"}}>Get ready to play a legendary Smahoot! game on {name}</h3>
+        <h1 style={{fontSize:"100px"}}>{countdown}</h1>
       </div>
 
       <div style={{display: creating == "joining" ? "block" : 'none'}}>
@@ -138,6 +173,9 @@ function App() {
             if (p.name == document.getElementById("displayName").value){
               setCreating("joined")
               setUser(p)
+              setGame(document.getElementById("gamePin").value)
+              setGameQuestions(p.quiz)
+              setUserName(p.name)
             }
           })
         }}> Join Smashoot! Game </button>
@@ -147,6 +185,10 @@ function App() {
       <div style={{display: creating == "joined" ? "block" : "none"}}>
         <h1>Game Joined!</h1>
         <p>Do you see your name on screen {user != null && user.name}? </p>
+      </div>
+
+      <div style={{display: creating == "playing" ? "block" : "none"}}>
+        <h1 style={{fontSize: "70px"}}>The game will start at any moment!</h1>
       </div>
     </>
   )

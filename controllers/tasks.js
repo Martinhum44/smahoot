@@ -34,11 +34,16 @@ io.on("connection", (socket) => {
             return socket.emit("error", `Player ${player} has already joined`);
         }
         games[pin].players.push({ name: player, score: 0 });
-        socket.emit("joinReturn", { name: player, score: 0 }); 
-        io.emit("joinReturnHost", { name: player, score: 0 });
+        socket.emit("joinReturn", { name: player, score: 0, quiz: games[pin].quiz }); 
+        io.emit("joinReturnHost", { name: player, score: 0, pin: pin, quiz: games[pin].quiz });
         console.log(games[pin].players)
         console.log(games)
-})}) 
+    })
+
+    socket.on("gameOn", (pin) => {
+        io.emit("gameOnReturn",pin)
+    })
+}) 
 
 const createQuiz = asyncW(async (req, res, next) => {
     const {questions, name} = req.body 
