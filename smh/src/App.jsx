@@ -22,6 +22,8 @@ function App() {
   const [score, setScore] = useState(null)
   const [currentlyAnswered,setCurrentlyAnswered] = useState(null)
   const [rightOrWrong,setRightOrWrong] = useState(null)
+  const playerData = useRef([])
+  const playerLength = useRef(0)
   socket.current = io("http://localhost:5000")
 
   useEffect(() => {
@@ -54,10 +56,12 @@ function App() {
       console.log("in func", objReturned.game, pin);
       console.log(objReturned.game == pin)
       if (objReturned.game == pin) {
+        const tempData = [...playerData.current, {name: objReturned.name, score: objReturned.newScore}]
+        playerData.current = tempData.sort((a, b) => b.score - a.score)
         setCurrentlyAnswered(prevCount => {
           const newCount = prevCount + 1;
-          console.log(newCount, players.length);
-          if (newCount === players.length) {
+          console.log(newCount, playerLength.current);
+          if (newCount === playerLength.current) {
             socket.current.emit("leaderboard", pin);
             setCreating("leaderboard");
             return 0;
@@ -77,6 +81,8 @@ function App() {
       return setCreating("questions")
     }},[countdown]
   )
+
+  useEffect(() => {playerLength.current = players.length},[players])
 
   useEffect(
     () => {
@@ -257,27 +263,42 @@ function App() {
       </div>
 
       <div style={{display:creating == "waitingForOthers" ? "block": "none"}}>
-        <h3>{userName}'s Game | Score: {score}</h3>
+        <h3>{userName}'s Game</h3>
         <h1>Waiting For Others To Respond...</h1>
       </div>
 
       <div style={{display:creating == "rightOrWrong" ? "block": "none"}}>
+        <h3>{userName}'s Game | Score: {score}</h3>
         <h1 style={{fontSize:"120px", color:rightOrWrong ? "green" : "red"}}>{rightOrWrong ? "Correct :D" : "Incorrect :("}</h1>
+      </div>
+
+      <div style={{display:creating == "leaderboard" ? "block": "none"}}>
+        <h1>Leaderboard</h1>
+        {playerData.current.length >= 5 ? <><h3><span style={{color:"gold"}}>1st</span> | {playerData.current[0].name} | {playerData.current[0].score}</h3>
+                                  <h3><span style={{color:"silver"}}>2nd</span> | {playerData.current[1].name} | {playerData.current[1].score}</h3>
+                                  <h3><span style={{color:"brown"}}>3rd</span> | {playerData.current[2].name} | {playerData.current[2].score}</h3>
+                                  <h3>4th | {playerData.current[3].name} | {playerData.current[3].score}</h3>
+                                  <h3>5th | {playerData.current[4].name} | {playerData.current[4].score}</h3></> : playerData.current.map(player => {
+                                    <h3>{player.name} | {player.score}</h3>
+                                  })}
       </div>
     </>
   )
   function submitHandler(rightOrWrong){
+    let sc = score
     console.log("In sumbit handler", rightOrWrong)
     if(rightOrWrong == true){
       setScore(s => s+1000)
+      sc += 1000
       console.log("RIGHT")
       setRightOrWrong(true)
     } else {
       setRightOrWrong(false)
     }
-    socket.current.emit("submit",{game:game,name:userName,answer:rightOrWrong,newScore:score})
+    socket.current.emit("submit",{game:game,name:userName,answer:rightOrWrong,newScore:sc})
     setCreating("waitingForOthers")
-    socket.current.on("leaderboard",pin => {
+    socket.current.on("leaderboardReturn", pin => {
+      console.log("PIN",pin)
       if(pin == game){
         setCreating("rightOrWrong")
       }
