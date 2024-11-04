@@ -287,13 +287,13 @@ function App() {
 
       <div style={{display:creating == "leaderboard" ? "block": "none"}}>
         <h1>Leaderboard</h1>
-        <div style={{padding: "10px", backgroundColor:"lightgrey", borderRadius:"10px"}}>{playerData.current.length >= 5 ? <><h3><span style={{color:"gold"}}>1</span> | {playerData.current[0].name} | {playerData.current[0].score}</h3>
+        <center><div style={{padding: "10px", backgroundColor:"lightgrey", borderRadius:"10px", width:"300px", marginBottom:"10px"}}>{playerData.current.length >= 5 ? <><h3><span style={{color:"gold"}}>1</span> | {playerData.current[0].name} | {playerData.current[0].score}</h3>
                                   <h3><span style={{color:"silver"}}>2</span> | {playerData.current[1].name} | {playerData.current[1].score}</h3>
                                   <h3><span style={{color:"brown"}}>3</span> | {playerData.current[2].name} | {playerData.current[2].score}</h3>
                                   <h3>4 | {playerData.current[3].name} | {playerData.current[3].score}</h3>
                                   <h3>5 | {playerData.current[4].name} | {playerData.current[4].score}</h3></> : playerData.current.map(player => {
                                     return <h3><span style={{color: player.place == 1 ? "gold" : (player.place == 2 ? "silver" : (player.place == 3 ? "brown" : "black"))}}>{player.place}</span> | {player.name} | {player.score}</h3>
-                                  })}</div>
+                                  })}</div></center>
         <button id="blue5" style={{ width: "250px" }} onClick={() => {
           socket.current.emit("next", pin)
           playerData.current = []
@@ -326,7 +326,7 @@ function App() {
       console.log("PIN",pin)
       if(pin == game){
         setCreating("questionTime")
-        setQuestionIndex(q => q+1)
+        setQuestionIndex(questionIndex+1)
       }
     })
     
