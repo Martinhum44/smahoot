@@ -22,6 +22,7 @@ function App() {
   const [score, setScore] = useState(null)
   const [currentlyAnswered,setCurrentlyAnswered] = useState(null)
   const [rightOrWrong,setRightOrWrong] = useState(null)
+  const [swic, setSwic] = useState(1000)
   const playerData = useRef([])
   const playerLength = useRef(0)
   const gameQuestionLength = useRef(0)
@@ -122,6 +123,7 @@ function App() {
         if(pinR == game){
           setQuestionIndex(0)
           setCreating("questionTime")
+          setInterval(() => setSwic(s => s > 500 ? s-20 : 500),1000)
         }
       })
     }
@@ -282,6 +284,7 @@ function App() {
         <p>Question {questionIndex+1}</p>    
         <h3>{userName}'s Game | Score: {score}</h3>
         <h1 style={{fontSize: "50px"}}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].title: "" }</h1>
+        <h3>Score won if correct: {swic}</h3>
         <button id="bigGreen" onClick={() => submitHandler(gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[0].rightOne: false)}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[0].body: ""}</button>
         <button id="bigBlue" onClick={() => submitHandler(gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[1].rightOne: false)}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[1].body: ""}</button>
         <button id="bigRed" onClick={()=>submitHandler(gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[2].rightOne: false)}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[2].body: ""}</button>
@@ -342,8 +345,8 @@ function App() {
     let sc = score
     console.log("In sumbit handler", rightOrWrong)
     if(rightOrWrong == true){
-      setScore(s => s+1000)
-      sc += 1000
+      setScore(s => s+swic)
+      sc += swic
       console.log("RIGHT")
       setRightOrWrong(true)
     } else {
@@ -355,6 +358,7 @@ function App() {
       console.log("PIN",pin)
       if(pin == game){
         setCreating("rightOrWrong")
+        setSwic(1000)
       }
     })
     socket.current.on("gameoverReturn", pin => {
