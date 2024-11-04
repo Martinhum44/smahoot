@@ -41,6 +41,13 @@ function App() {
   }, [questions, name]);
 
   useEffect(() => {
+    if(gameQuestions != null){
+      console.log(questionIndex)
+      console.log(gameQuestions.questions[questionIndex])
+    }
+  },[questionIndex])
+
+  useEffect(() => {
     socket.current.on('joinReturnHost', (data) => {
       console.log('join return', data);
       console.log(data.pin, pin)
@@ -58,6 +65,10 @@ function App() {
       if (objReturned.game == pin) {
         const tempData = [...playerData.current, {name: objReturned.name, score: objReturned.newScore}]
         playerData.current = tempData.sort((a, b) => b.score - a.score)
+        for(let i = 0; i < playerData.current.length; i++){
+          playerData.current[i].place = i+1
+          console.log(playerData.current[i].place)
+        }
         setCurrentlyAnswered(prevCount => {
           const newCount = prevCount + 1;
           console.log(newCount, playerLength.current);
@@ -245,6 +256,7 @@ function App() {
       </div>
 
       <div style={{display: creating == "questions" ? "block" : "none"}}>
+        <p>Question {questionIndex+1}</p>
         <h3>Answered: {currentlyAnswered}/{players.length}</h3>
         <h1 style={{fontSize: "50px"}}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].title: "" }</h1>
         <button id="bigGreen">{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[0].body: ""}</button>
@@ -253,7 +265,8 @@ function App() {
         <button id="bigYellow">{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[3].body: ""}</button>
       </div>
 
-      <div style={{display: creating == "questionTime" ? "block" : "none"}}>     
+      <div style={{display: creating == "questionTime" ? "block" : "none"}}> 
+        <p>Question {questionIndex+1}</p>    
         <h3>{userName}'s Game | Score: {score}</h3>
         <h1 style={{fontSize: "50px"}}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].title: "" }</h1>
         <button id="bigGreen" onClick={() => submitHandler(gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[0].rightOne: false)}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[0].body: ""}</button>
@@ -274,13 +287,19 @@ function App() {
 
       <div style={{display:creating == "leaderboard" ? "block": "none"}}>
         <h1>Leaderboard</h1>
-        {playerData.current.length >= 5 ? <><h3><span style={{color:"gold"}}>1st</span> | {playerData.current[0].name} | {playerData.current[0].score}</h3>
-                                  <h3><span style={{color:"silver"}}>2nd</span> | {playerData.current[1].name} | {playerData.current[1].score}</h3>
-                                  <h3><span style={{color:"brown"}}>3rd</span> | {playerData.current[2].name} | {playerData.current[2].score}</h3>
-                                  <h3>4th | {playerData.current[3].name} | {playerData.current[3].score}</h3>
-                                  <h3>5th | {playerData.current[4].name} | {playerData.current[4].score}</h3></> : playerData.current.map(player => {
-                                    <h3>{player.name} | {player.score}</h3>
-                                  })}
+        <div style={{padding: "10px", backgroundColor:"lightgrey", borderRadius:"10px"}}>{playerData.current.length >= 5 ? <><h3><span style={{color:"gold"}}>1</span> | {playerData.current[0].name} | {playerData.current[0].score}</h3>
+                                  <h3><span style={{color:"silver"}}>2</span> | {playerData.current[1].name} | {playerData.current[1].score}</h3>
+                                  <h3><span style={{color:"brown"}}>3</span> | {playerData.current[2].name} | {playerData.current[2].score}</h3>
+                                  <h3>4 | {playerData.current[3].name} | {playerData.current[3].score}</h3>
+                                  <h3>5 | {playerData.current[4].name} | {playerData.current[4].score}</h3></> : playerData.current.map(player => {
+                                    return <h3><span style={{color: player.place == 1 ? "gold" : (player.place == 2 ? "silver" : (player.place == 3 ? "brown" : "black"))}}>{player.place}</span> | {player.name} | {player.score}</h3>
+                                  })}</div>
+        <button id="blue5" style={{ width: "250px" }} onClick={() => {
+          socket.current.emit("next", pin)
+          playerData.current = []
+          setQuestionIndex(q => q+1)
+          setCreating("questions")
+        }}> Next question </button>
       </div>
     </>
   )
@@ -303,6 +322,14 @@ function App() {
         setCreating("rightOrWrong")
       }
     })
+    socket.current.on("nextReturn", pin => {
+      console.log("PIN",pin)
+      if(pin == game){
+        setCreating("questionTime")
+        setQuestionIndex(q => q+1)
+      }
+    })
+    
   }
 }
 

@@ -55,6 +55,10 @@ io.on("connection", (socket) => {
     socket.on("leaderboard", (pin) => {
         io.emit("leaderboardReturn",pin)
     })
+
+    socket.on("next", (pin) => {
+        io.emit("nextReturn",pin)
+    })
 }) 
 
 const createQuiz = asyncW(async (req, res, next) => {
