@@ -24,6 +24,8 @@ function App() {
   const [rightOrWrong,setRightOrWrong] = useState(null)
   const playerData = useRef([])
   const playerLength = useRef(0)
+  const gameQuestionLength = useRef(0)
+  const questionIndexRef = useRef(0)
   socket.current = io("http://localhost:5000")
 
   useEffect(() => {
@@ -45,7 +47,12 @@ function App() {
       console.log(questionIndex)
       console.log(gameQuestions.questions[questionIndex])
     }
+    questionIndexRef.current = questionIndex
   },[questionIndex])
+
+  useEffect(() => {
+    gameQuestionLength.current = gameQuestions == null ? 0 : gameQuestions.questions.length
+  },[gameQuestions])
 
   useEffect(() => {
     socket.current.on('joinReturnHost', (data) => {
@@ -73,8 +80,14 @@ function App() {
           const newCount = prevCount + 1;
           console.log(newCount, playerLength.current);
           if (newCount === playerLength.current) {
-            socket.current.emit("leaderboard", pin);
-            setCreating("leaderboard");
+            console.log("LENGTH: "+gameQuestionLength.current, "INDEX:", questionIndexRef.current)
+            if(gameQuestionLength.current == questionIndexRef.current+1){
+              socket.current.emit("gameover", pin);
+              setCreating("gameover");
+            } else {
+              socket.current.emit("leaderboard", pin);
+              setCreating("leaderboard");
+            }
             return 0;
           }
           return newCount;
@@ -301,6 +314,28 @@ function App() {
           setCreating("questions")
         }}> Next question </button>
       </div>
+
+      <div style={{display:creating == "gameover" ? "block": "none"}}>
+        <h1>Final Results</h1>
+        <center><div style={{padding: "10px", backgroundColor:"lightgrey", borderRadius:"10px", width:"300px", marginBottom:"10px"}}>{playerData.current.length >= 5 ? <><h3><span style={{color:"gold"}}>1</span> | {playerData.current[0].name} | {playerData.current[0].score}</h3>
+                                  <h3><span style={{color:"silver"}}>2</span> | {playerData.current[1].name} | {playerData.current[1].score}</h3>
+                                  <h3><span style={{color:"brown"}}>3</span> | {playerData.current[2].name} | {playerData.current[2].score}</h3>
+                                  <h3>4 | {playerData.current[3].name} | {playerData.current[3].score}</h3>
+                                  <h3>5 | {playerData.current[4].name} | {playerData.current[4].score}</h3></> : playerData.current.map(player => {
+                                    return <h3><span style={{color: player.place == 1 ? "gold" : (player.place == 2 ? "silver" : (player.place == 3 ? "brown" : "black"))}}>{player.place}</span> | {player.name} | {player.score}</h3>
+                                  })}</div></center>
+        <button id="blue5" style={{ width: "250px" }} onClick={() => location.reload()}> Back to home screen </button>
+      </div>
+
+      <div style={{display:creating == "done" ? "block": "none"}}>
+        <h3>{userName}'s Game | Final Score: {score}</h3>
+        <h1 style={{fontSize:"120px", color:rightOrWrong ? "green" : "red"}}>{rightOrWrong ? "Correct :D" : "Incorrect :("}</h1>
+        <center><div style={{padding: "10px", backgroundColor:"lightgrey", borderRadius:"10px", width:"350px", marginBottom:"10px"}}>
+          <h1>Game Over</h1>
+          <h3>Check your placement on the screen!</h3>
+          <button id="blue5" style={{ width: "250px" }} onClick={() => location.reload()}> Back to home screen </button>
+        </div></center>
+      </div>
     </>
   )
   function submitHandler(rightOrWrong){
@@ -322,6 +357,12 @@ function App() {
         setCreating("rightOrWrong")
       }
     })
+    socket.current.on("gameoverReturn", pin => {
+      console.log("PIN",pin)
+      if(pin == game){
+        setCreating("done")
+      }
+    })
     socket.current.on("nextReturn", pin => {
       console.log("PIN",pin)
       if(pin == game){
@@ -329,7 +370,6 @@ function App() {
         setQuestionIndex(questionIndex+1)
       }
     })
-    
   }
 }
 
