@@ -23,6 +23,7 @@ function App() {
   const [currentlyAnswered,setCurrentlyAnswered] = useState(null)
   const [rightOrWrong,setRightOrWrong] = useState(null)
   const [swic, setSwic] = useState(1000)
+  const [scoreWon, setScoreWon] = useState(1000)
   const playerData = useRef([])
   const playerLength = useRef(0)
   const gameQuestionLength = useRef(0)
@@ -284,7 +285,7 @@ function App() {
         <p>Question {questionIndex+1}</p>    
         <h3>{userName}'s Game | Score: {score}</h3>
         <h1 style={{fontSize: "50px"}}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].title: "" }</h1>
-        <h3>Score won if correct: {swic}</h3>
+        <h2>Score won if correct: {swic}</h2>
         <button id="bigGreen" onClick={() => submitHandler(gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[0].rightOne: false)}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[0].body: ""}</button>
         <button id="bigBlue" onClick={() => submitHandler(gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[1].rightOne: false)}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[1].body: ""}</button>
         <button id="bigRed" onClick={()=>submitHandler(gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[2].rightOne: false)}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[2].body: ""}</button>
@@ -299,6 +300,7 @@ function App() {
       <div style={{display:creating == "rightOrWrong" ? "block": "none"}}>
         <h3>{userName}'s Game | Score: {score}</h3>
         <h1 style={{fontSize:"120px", color:rightOrWrong ? "green" : "red"}}>{rightOrWrong ? "Correct :D" : "Incorrect :("}</h1>
+        <h1>+{scoreWon}</h1>
       </div>
 
       <div style={{display:creating == "leaderboard" ? "block": "none"}}>
@@ -333,9 +335,10 @@ function App() {
       <div style={{display:creating == "done" ? "block": "none"}}>
         <h3>{userName}'s Game | Final Score: {score}</h3>
         <h1 style={{fontSize:"120px", color:rightOrWrong ? "green" : "red"}}>{rightOrWrong ? "Correct :D" : "Incorrect :("}</h1>
+        <h1>+{scoreWon}</h1>
         <center><div style={{padding: "10px", backgroundColor:"lightgrey", borderRadius:"10px", width:"350px", marginBottom:"10px"}}>
           <h1>Game Over</h1>
-          <h3>Check your placement on the screen!</h3>
+          <h3>Check your placement on the host's screen!</h3>
           <button id="blue5" style={{ width: "250px" }} onClick={() => location.reload()}> Back to home screen </button>
         </div></center>
       </div>
@@ -347,10 +350,12 @@ function App() {
     if(rightOrWrong == true){
       setScore(s => s+swic)
       sc += swic
+      setScoreWon(swic)
       console.log("RIGHT")
       setRightOrWrong(true)
     } else {
       setRightOrWrong(false)
+      setScoreWon(0)
     }
     socket.current.emit("submit",{game:game,name:userName,answer:rightOrWrong,newScore:sc})
     setCreating("waitingForOthers")
