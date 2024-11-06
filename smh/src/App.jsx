@@ -20,15 +20,19 @@ function App() {
   const [countdown, setCountdown] = useState(5)
   const [questionIndex, setQuestionIndex] = useState(null)
   const [score, setScore] = useState(null)
-  const [currentlyAnswered,setCurrentlyAnswered] = useState(null)
-  const [rightOrWrong,setRightOrWrong] = useState(null)
+  const [currentlyAnswered, setCurrentlyAnswered] = useState(null)
+  const [rightOrWrong, setRightOrWrong] = useState(null)
   const [swic, setSwic] = useState(1000)
   const [scoreWon, setScoreWon] = useState(1000)
+  const intervalId = useRef(null)
   const playerData = useRef([])
   const playerLength = useRef(0)
   const gameQuestionLength = useRef(0)
   const questionIndexRef = useRef(0)
+  const swicRef = useRef(1000)
   socket.current = io("http://localhost:5000")
+
+  function doNothing() {}
 
   useEffect(() => {
     let aok = true;
@@ -45,22 +49,26 @@ function App() {
   }, [questions, name]);
 
   useEffect(() => {
-    if(gameQuestions != null){
-      console.log(questionIndex)
+    if (gameQuestions != null) {
+      console.log("QSI:",questionIndex)
       console.log(gameQuestions.questions[questionIndex])
     }
     questionIndexRef.current = questionIndex
-  },[questionIndex])
+  }, [questionIndex])
 
   useEffect(() => {
     gameQuestionLength.current = gameQuestions == null ? 0 : gameQuestions.questions.length
-  },[gameQuestions])
+  }, [gameQuestions])
+
+  useEffect(() => {
+    swicRef.current = swic
+  }, [swic])
 
   useEffect(() => {
     socket.current.on('joinReturnHost', (data) => {
       console.log('join return', data);
       console.log(data.pin, pin)
-      if(data.pin == pin){
+      if (data.pin == pin) {
         console.log(data.pin, pin)
         setPlayers(p => [...p, data.name]);
         setGameQuestions(data.quiz)
@@ -72,18 +80,18 @@ function App() {
       console.log("in func", objReturned.game, pin);
       console.log(objReturned.game == pin)
       if (objReturned.game == pin) {
-        const tempData = [...playerData.current, {name: objReturned.name, score: objReturned.newScore}]
+        const tempData = [...playerData.current, { name: objReturned.name, score: objReturned.newScore }]
         playerData.current = tempData.sort((a, b) => b.score - a.score)
-        for(let i = 0; i < playerData.current.length; i++){
-          playerData.current[i].place = i+1
+        for (let i = 0; i < playerData.current.length; i++) {
+          playerData.current[i].place = i + 1
           console.log(playerData.current[i].place)
         }
         setCurrentlyAnswered(prevCount => {
           const newCount = prevCount + 1;
           console.log(newCount, playerLength.current);
           if (newCount === playerLength.current) {
-            console.log("LENGTH: "+gameQuestionLength.current, "INDEX:", questionIndexRef.current)
-            if(gameQuestionLength.current == questionIndexRef.current+1){
+            console.log("LENGTH: " + gameQuestionLength.current, "INDEX:", questionIndexRef.current)
+            if (gameQuestionLength.current == questionIndexRef.current + 1) {
               socket.current.emit("gameover", pin);
               setCreating("gameover");
             } else {
@@ -96,39 +104,43 @@ function App() {
         });
       }
     }
-    socket.current.on("submitReturn",func)
-  },[pin])
+    socket.current.on("submitReturn", func)
+  }, [pin])
 
   useEffect(() => {
     console.log(countdown)
     if (countdown == 0) {
-      socket.current.emit("startGame",pin)
-      setQuestionIndex(0)
+      socket.current.emit("startGame", pin)
       return setCreating("questions")
-    }},[countdown]
+    } else {
+      setQuestionIndex(0)
+    }
+  }, [countdown]
   )
 
-  useEffect(() => {playerLength.current = players.length},[players])
+  useEffect(() => { playerLength.current = players.length }, [players])
 
   useEffect(
     () => {
       socket.current.on("gameOnReturn", (pinR) => {
         console.log(pinR, game)
-        if(pinR == game){
+        if (pinR == game) {
           setCreating("playing")
         }
       })
 
       socket.current.on("startGameReturn", (pinR) => {
-        console.log("papi",pinR, game)
-        if(pinR == game){
+        console.log("papi", pinR, game)
+        if (pinR == game) {
           setQuestionIndex(0)
           setCreating("questionTime")
-          setInterval(() => setSwic(s => s > 500 ? s-20 : 500),1000)
+          intervalId.current = setInterval(() => {
+            if (swicRef.current > 500) { setSwic(s => s - 20) }
+          }, 1000)
         }
       })
     }
-    ,[game])
+    , [game])
 
   function createQuestion() {
     if (questAmount.length === 0) {
@@ -152,23 +164,23 @@ function App() {
 
   return (
     <>
-      <div style={{display: creating == "select" ? "block" : 'none'}}>
-      <h1>Welcome to Smashoot!</h1>
-        <div style={{display: "flex", justifyContent: "center"}}>
+      <div style={{ display: creating == "select" ? "block" : 'none' }}>
+        <h1>Welcome to Smashoot!</h1>
+        <div style={{ display: "flex", justifyContent: "center" }}>
           <button id="green1" style={{ width: "250px" }} onClick={() => setCreating("hostart")}> Host Smashoot! </button>
-          <button id="blue1" style={{ width: "250px"}} onClick={() => setCreating("creating")}> Create Smashoot! </button>
-          <button id="red2" style={{ width: "250px"}} onClick={() => setCreating("joining")}> Join game </button>
+          <button id="blue1" style={{ width: "250px" }} onClick={() => setCreating("creating")}> Create Smashoot! </button>
+          <button id="red2" style={{ width: "250px" }} onClick={() => setCreating("joining")}> Join game </button>
         </div>
       </div>
-      <div style={{display: creating == "creating" ? "block" : 'none'}}>
+      <div style={{ display: creating == "creating" ? "block" : 'none' }}>
         <h1>Create a Smashoot!</h1>
-        <input id={"qn"} onChange={(e) => setName(e.target.value)} placeholder="Quiz Title" style={{border: "none", width: "70%", height: "100px", fontSize: "50px", backgroundColor: "#CECECE", borderRadius: "5px", fontFamily: "Inter, system-ui, Avenir, Helvetica, Arial, sans-serif"}}/>
-        <h3 style={{marginBottom:"50px", color:"red"}}>{name == ""?"Please provide a quiz name":""}</h3>
+        <input id={"qn"} onChange={(e) => setName(e.target.value)} placeholder="Quiz Title" style={{ border: "none", width: "70%", height: "100px", fontSize: "50px", backgroundColor: "#CECECE", borderRadius: "5px", fontFamily: "Inter, system-ui, Avenir, Helvetica, Arial, sans-serif" }} />
+        <h3 style={{ marginBottom: "50px", color: "red" }}>{name == "" ? "Please provide a quiz name" : ""}</h3>
         {questAmount.map(id => {
-          console.log("ID "+id)
-          return <QuestionBuilder id={id} callbackChange={obj => setQuestions({...questions, [obj.id]:obj})}/>
+          console.log("ID " + id)
+          return <QuestionBuilder id={id} callbackChange={obj => setQuestions({ ...questions, [obj.id]: obj })} />
         })}
-        
+
         <center>
           <div style={{ display: "flex", marginBottom: "20px", backgroundColor: "#CECECE", padding: "15px", borderRadius: "10px", width: "600px" }}>
             <button id="green" style={{ width: "250px" }} onClick={createQuestion}> Create question </button>
@@ -177,30 +189,30 @@ function App() {
         </center>
       </div>
 
-      <div style={{display: creating == "finished" ? "block" : 'none'}}>
+      <div style={{ display: creating == "finished" ? "block" : 'none' }}>
         <h1>Smashoot! {name} created</h1>
-        <div style={{display: "flex", justifyContent: "center"}}>
+        <div style={{ display: "flex", justifyContent: "center" }}>
           <button id="green1" style={{ width: "250px" }} onClick={() => setCreating("hostart")}> Host Smashoot! </button>
           <button id="blue1" style={{ width: "250px", display: allOk == true && Object.keys(questions).length != 0 ? "block" : "none" }} onClick={() => setCreating("creating")}> Create Smashoot! </button>
-          <button id="red2" style={{ width: "250px"}} onClick={() => setCreating("joining")}> Join game </button>
+          <button id="red2" style={{ width: "250px" }} onClick={() => setCreating("joining")}> Join game </button>
         </div>
       </div>
 
-      <div style={{display: creating == "hostart" ? "block" : 'none'}}>
+      <div style={{ display: creating == "hostart" ? "block" : 'none' }}>
         <h1>Host smashoot!</h1>
-        <input id="quizName" onChange={(e) => setName(e.target.value)} placeholder="Host Quiz Named: " style={{border: "none", width: "70%", height: "100px", fontSize: "50px", backgroundColor: "#CECECE", borderRadius: "5px", fontFamily: "Inter, system-ui, Avenir, Helvetica, Arial, sans-serif", marginBottom:"50px"}}/> <br></br>
-        <button id="blue2" style={{ width: "400px", height:"200px", borderRadius:"20px", fontSize: "30px" }} onClick={async() => {
+        <input id="quizName" onChange={(e) => setName(e.target.value)} placeholder="Host Quiz Named: " style={{ border: "none", width: "70%", height: "100px", fontSize: "50px", backgroundColor: "#CECECE", borderRadius: "5px", fontFamily: "Inter, system-ui, Avenir, Helvetica, Arial, sans-serif", marginBottom: "50px" }} /> <br></br>
+        <button id="blue2" style={{ width: "400px", height: "200px", borderRadius: "20px", fontSize: "30px" }} onClick={async () => {
           let quizDetails
-          try{
-            quizDetails = await axios.get("http://localhost:3000/api/v1/tasks/"+document.getElementById("quizName").value)
-          } catch (error){
+          try {
+            quizDetails = await axios.get("http://localhost:3000/api/v1/tasks/" + document.getElementById("quizName").value)
+          } catch (error) {
             console.log(error)
-            return alert("ERROR "+error.response.data.msg)
+            return alert("ERROR " + error.response.data.msg)
           }
 
           setPin(quizDetails.data.gamePin)
           console.log(quizDetails)
-          if (players == null){
+          if (players == null) {
             setPlayers([])
           }
           console.log(socket)
@@ -208,135 +220,135 @@ function App() {
         }}> Host Smashoot! </button>
       </div>
 
-      <div style={{display: creating == "hosting" ? "block" : 'none'}}>
-        <h1>Game Pin: {pin}</h1><br/><br/>
+      <div style={{ display: creating == "hosting" ? "block" : 'none' }}>
+        <h1>Game Pin: {pin}</h1><br /><br />
         <h3>Smashooters</h3>
-        <center><div style={{width:"50%", backgroundColor:"lightgray", height:"300px", overflowY:"scroll", borderRadius:"10px"}}>{players == null ? "" : players.map(p => <p>{p}</p>)}</div><br />
-        <button id="blue3" style={{ width: "250px", display: players != null && players.length == 0 ? "none" : "block", }} onClick={() => {
-          socket.current.emit("gameOn", pin)
+        <center><div style={{ width: "50%", backgroundColor: "lightgray", height: "300px", overflowY: "scroll", borderRadius: "10px" }}>{players == null ? "" : players.map(p => <p>{p}</p>)}</div><br />
+          <button id="blue3" style={{ width: "250px", display: players != null && players.length == 0 ? "none" : "block", }} onClick={() => {
+            socket.current.emit("gameOn", pin)
 
-          socket.current.on("gameOnReturn",pinR => {
-            if (pinR == pin){
-              setCreating("gameOn")
+            socket.current.on("gameOnReturn", pinR => {
+              if (pinR == pin) {
+                setCreating("gameOn")
 
-              setInterval(() => {
-                setCountdown(c => c > 0 ? c-1 : 0); 
-              },1000)
-              setCurrentlyAnswered(0)
-            }
-          })
-        }}> Start Smashoot! </button>
+                setInterval(() => {
+                  setCountdown(c => c > 0 ? c - 1 : 0);
+                }, 1000)
+                setCurrentlyAnswered(0)
+              }
+            })
+          }}> Start Smashoot! </button>
         </center>
       </div>
 
-      <div style={{display:creating == "gameOn" ? "block" : "none"}}>
+      <div style={{ display: creating == "gameOn" ? "block" : "none" }}>
         <h1>Game On!</h1>
-        <h3 style={{color:"red"}}>Get ready to play a legendary Smahoot! game on {name}</h3>
-        <h1 style={{fontSize:"100px"}}>{countdown}</h1>
+        <h3 style={{ color: "red" }}>Get ready to play a legendary Smahoot! game on {name}</h3>
+        <h1 style={{ fontSize: "100px" }}>{countdown}</h1>
       </div>
 
-      <div style={{display: creating == "joining" ? "block" : 'none'}}>
+      <div style={{ display: creating == "joining" ? "block" : 'none' }}>
         <h1>Join Smahoot! Game</h1>
-        <input id="gamePin" onChange={(e) => setName(e.target.value)} placeholder="Game Pin: " style={{border: "none", width: "70%", height: "100px", fontSize: "50px", backgroundColor: "#CECECE", borderRadius: "5px", fontFamily: "Inter, system-ui, Avenir, Helvetica, Arial, sans-serif", marginBottom:"50px"}}/> <br/>
-        <input id="displayName" onChange={(e) => setName(e.target.value)} placeholder="Display Name: " style={{border: "none", width: "70%", height: "100px", fontSize: "50px", backgroundColor: "#CECECE", borderRadius: "5px", fontFamily: "Inter, system-ui, Avenir, Helvetica, Arial, sans-serif", marginBottom:"50px"}}/> <br/>
+        <input id="gamePin" onChange={(e) => setName(e.target.value)} placeholder="Game Pin: " style={{ border: "none", width: "70%", height: "100px", fontSize: "50px", backgroundColor: "#CECECE", borderRadius: "5px", fontFamily: "Inter, system-ui, Avenir, Helvetica, Arial, sans-serif", marginBottom: "50px" }} /> <br />
+        <input id="displayName" onChange={(e) => setName(e.target.value)} placeholder="Display Name: " style={{ border: "none", width: "70%", height: "100px", fontSize: "50px", backgroundColor: "#CECECE", borderRadius: "5px", fontFamily: "Inter, system-ui, Avenir, Helvetica, Arial, sans-serif", marginBottom: "50px" }} /> <br />
         <center><br />
-        <button id="blue4" style={{ width: "250px", display: "block" }} onClick={() => {
-          socket.current.emit("join",{player:document.getElementById("displayName").value,pin:document.getElementById("gamePin").value})
-          console.log(socket)
-          socket.current.on("error", e => {
-            console.log(e)
-            alert(e)
-          })
-          socket.current.on("joinReturn", (p) => { 
-            console.log(p)
-            if (p.name == document.getElementById("displayName").value){
-              setCreating("joined")
-              setUser(p)
-              setGame(document.getElementById("gamePin").value)
-              setGameQuestions(p.quiz)
-              setUserName(p.name)
-              setScore(0)
-            }
-          })
-        }}> Join Smashoot! Game </button>
+          <button id="blue4" style={{ width: "250px", display: "block" }} onClick={() => {
+            socket.current.emit("join", { player: document.getElementById("displayName").value, pin: document.getElementById("gamePin").value })
+            console.log(socket)
+            socket.current.on("error", e => {
+              console.log(e)
+              alert(e)
+            })
+            socket.current.on("joinReturn", (p) => {
+              console.log(p)
+              if (p.name == document.getElementById("displayName").value) {
+                setCreating("joined")
+                setUser(p)
+                setGame(document.getElementById("gamePin").value)
+                setGameQuestions(p.quiz)
+                setUserName(p.name)
+                setScore(0)
+              }
+            })
+          }}> Join Smashoot! Game </button>
         </center>
       </div>
 
-      <div style={{display: creating == "joined" ? "block" : "none"}}>
+      <div style={{ display: creating == "joined" ? "block" : "none" }}>
         <h1>Game Joined!</h1>
         <p>Do you see your name on screen {user != null && user.name}? </p>
       </div>
 
-      <div style={{display: creating == "playing" ? "block" : "none"}}>
-        <h1 style={{fontSize: "70px"}}>The game will start at any moment!</h1>
+      <div style={{ display: creating == "playing" ? "block" : "none" }}>
+        <h1 style={{ fontSize: "70px" }}>The game will start at any moment!</h1>
       </div>
 
-      <div style={{display: creating == "questions" ? "block" : "none"}}>
-        <p>Question {questionIndex+1}</p>
+      <div style={{ display: creating == "questions" ? "block" : "none" }}>
+        <p>Question {questionIndex + 1}</p>
         <h3>Answered: {currentlyAnswered}/{players.length}</h3>
-        <h1 style={{fontSize: "50px"}}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].title: "" }</h1>
-        <button id="bigGreen">{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[0].body: ""}</button>
-        <button id="bigBlue">{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[1].body: ""}</button>
-        <button id="bigRed">{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[2].body: ""}</button>
-        <button id="bigYellow">{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[3].body: ""}</button>
+        <h1 style={{ fontSize: "50px" }}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].title : ""}</h1>
+        <button id="bigGreen">{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[0].body : ""}</button>
+        <button id="bigBlue">{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[1].body : ""}</button>
+        <button id="bigRed">{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[2].body : ""}</button>
+        <button id="bigYellow">{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[3].body : ""}</button>
       </div>
 
-      <div style={{display: creating == "questionTime" ? "block" : "none"}}> 
-        <p>Question {questionIndex+1}</p>    
+      <div style={{ display: creating == "questionTime" ? "block" : "none" }}>
+        <p>Question {questionIndex + 1}</p>
         <h3>{userName}'s Game | Score: {score}</h3>
-        <h1 style={{fontSize: "50px"}}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].title: "" }</h1>
+        <h1 style={{ fontSize: "50px" }}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].title : ""}</h1>
         <h2>Score won if correct: {swic}</h2>
-        <button id="bigGreen" onClick={() => submitHandler(gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[0].rightOne: false)}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[0].body: ""}</button>
-        <button id="bigBlue" onClick={() => submitHandler(gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[1].rightOne: false)}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[1].body: ""}</button>
-        <button id="bigRed" onClick={()=>submitHandler(gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[2].rightOne: false)}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[2].body: ""}</button>
-        <button id="bigYellow" onClick={() => submitHandler(gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[3].rightOne: false)}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[3].body: ""}</button>
+        <button id="bigGreen" onClick={() => submitHandler(gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[0].rightOne : false)}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[0].body : ""}</button>
+        <button id="bigBlue" onClick={() => submitHandler(gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[1].rightOne : false)}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[1].body : ""}</button>
+        <button id="bigRed" onClick={() => submitHandler(gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[2].rightOne : false)}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[2].body : ""}</button>
+        <button id="bigYellow" onClick={() => submitHandler(gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[3].rightOne : false)}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[3].body : ""}</button>
       </div>
 
-      <div style={{display:creating == "waitingForOthers" ? "block": "none"}}>
+      <div style={{ display: creating == "waitingForOthers" ? "block" : "none" }}>
         <h3>{userName}'s Game</h3>
         <h1>Waiting For Others To Respond...</h1>
       </div>
 
-      <div style={{display:creating == "rightOrWrong" ? "block": "none"}}>
+      <div style={{ display: creating == "rightOrWrong" ? "block" : "none" }}>
         <h3>{userName}'s Game | Score: {score}</h3>
-        <h1 style={{fontSize:"120px", color:rightOrWrong ? "green" : "red"}}>{rightOrWrong ? "Correct :D" : "Incorrect :("}</h1>
+        <h1 style={{ fontSize: "120px", color: rightOrWrong ? "green" : "red" }}>{rightOrWrong ? "Correct :D" : "Incorrect :("}</h1>
         <h1>+{scoreWon}</h1>
       </div>
 
-      <div style={{display:creating == "leaderboard" ? "block": "none"}}>
+      <div style={{ display: creating == "leaderboard" ? "block" : "none" }}>
         <h1>Leaderboard</h1>
-        <center><div style={{padding: "10px", backgroundColor:"lightgrey", borderRadius:"10px", width:"300px", marginBottom:"10px"}}>{playerData.current.length >= 5 ? <><h3><span style={{color:"gold"}}>1</span> | {playerData.current[0].name} | {playerData.current[0].score}</h3>
-                                  <h3><span style={{color:"silver"}}>2</span> | {playerData.current[1].name} | {playerData.current[1].score}</h3>
-                                  <h3><span style={{color:"brown"}}>3</span> | {playerData.current[2].name} | {playerData.current[2].score}</h3>
-                                  <h3>4 | {playerData.current[3].name} | {playerData.current[3].score}</h3>
-                                  <h3>5 | {playerData.current[4].name} | {playerData.current[4].score}</h3></> : playerData.current.map(player => {
-                                    return <h3><span style={{color: player.place == 1 ? "gold" : (player.place == 2 ? "silver" : (player.place == 3 ? "brown" : "black"))}}>{player.place}</span> | {player.name} | {player.score}</h3>
-                                  })}</div></center>
+        <center><div style={{ padding: "10px", backgroundColor: "lightgrey", borderRadius: "10px", width: "300px", marginBottom: "10px" }}>{playerData.current.length >= 5 ? <><h3><span style={{ color: "gold" }}>1</span> | {playerData.current[0].name} | {playerData.current[0].score}</h3>
+          <h3><span style={{ color: "silver" }}>2</span> | {playerData.current[1].name} | {playerData.current[1].score}</h3>
+          <h3><span style={{ color: "brown" }}>3</span> | {playerData.current[2].name} | {playerData.current[2].score}</h3>
+          <h3>4 | {playerData.current[3].name} | {playerData.current[3].score}</h3>
+          <h3>5 | {playerData.current[4].name} | {playerData.current[4].score}</h3></> : playerData.current.map(player => {
+            return <h3><span style={{ color: player.place == 1 ? "gold" : (player.place == 2 ? "silver" : (player.place == 3 ? "brown" : "black")) }}>{player.place}</span> | {player.name} | {player.score}</h3>
+          })}</div></center>
         <button id="blue5" style={{ width: "250px" }} onClick={() => {
           socket.current.emit("next", pin)
           playerData.current = []
-          setQuestionIndex(q => q+1)
+          setQuestionIndex(q => q + 1)
           setCreating("questions")
         }}> Next question </button>
       </div>
 
-      <div style={{display:creating == "gameover" ? "block": "none"}}>
+      <div style={{ display: creating == "gameover" ? "block" : "none" }}>
         <h1>Final Results</h1>
-        <center><div style={{padding: "10px", backgroundColor:"lightgrey", borderRadius:"10px", width:"300px", marginBottom:"10px"}}>{playerData.current.length >= 5 ? <><h3><span style={{color:"gold"}}>1</span> | {playerData.current[0].name} | {playerData.current[0].score}</h3>
-                                  <h3><span style={{color:"silver"}}>2</span> | {playerData.current[1].name} | {playerData.current[1].score}</h3>
-                                  <h3><span style={{color:"brown"}}>3</span> | {playerData.current[2].name} | {playerData.current[2].score}</h3>
-                                  <h3>4 | {playerData.current[3].name} | {playerData.current[3].score}</h3>
-                                  <h3>5 | {playerData.current[4].name} | {playerData.current[4].score}</h3></> : playerData.current.map(player => {
-                                    return <h3><span style={{color: player.place == 1 ? "gold" : (player.place == 2 ? "silver" : (player.place == 3 ? "brown" : "black"))}}>{player.place}</span> | {player.name} | {player.score}</h3>
-                                  })}</div></center>
+        <center><div style={{ padding: "10px", backgroundColor: "lightgrey", borderRadius: "10px", width: "300px", marginBottom: "10px" }}>{playerData.current.length >= 5 ? <><h3><span style={{ color: "gold" }}>1</span> | {playerData.current[0].name} | {playerData.current[0].score}</h3>
+          <h3><span style={{ color: "silver" }}>2</span> | {playerData.current[1].name} | {playerData.current[1].score}</h3>
+          <h3><span style={{ color: "brown" }}>3</span> | {playerData.current[2].name} | {playerData.current[2].score}</h3>
+          <h3>4 | {playerData.current[3].name} | {playerData.current[3].score}</h3>
+          <h3>5 | {playerData.current[4].name} | {playerData.current[4].score}</h3></> : playerData.current.map(player => {
+            return <h3><span style={{ color: player.place == 1 ? "gold" : (player.place == 2 ? "silver" : (player.place == 3 ? "brown" : "black")) }}>{player.place}</span> | {player.name} | {player.score}</h3>
+          })}</div></center>
         <button id="blue5" style={{ width: "250px" }} onClick={() => location.reload()}> Back to home screen </button>
       </div>
 
-      <div style={{display:creating == "done" ? "block": "none"}}>
+      <div style={{ display: creating == "done" ? "block" : "none" }}>
         <h3>{userName}'s Game | Final Score: {score}</h3>
-        <h1 style={{fontSize:"120px", color:rightOrWrong ? "green" : "red"}}>{rightOrWrong ? "Correct :D" : "Incorrect :("}</h1>
+        <h1 style={{ fontSize: "120px", color: rightOrWrong ? "green" : "red" }}>{rightOrWrong ? "Correct :D" : "Incorrect :("}</h1>
         <h1>+{scoreWon}</h1>
-        <center><div style={{padding: "10px", backgroundColor:"lightgrey", borderRadius:"10px", width:"350px", marginBottom:"10px"}}>
+        <center><div style={{ padding: "10px", backgroundColor: "lightgrey", borderRadius: "10px", width: "350px", marginBottom: "10px" }}>
           <h1>Game Over</h1>
           <h3>Check your placement on the host's screen!</h3>
           <button id="blue5" style={{ width: "250px" }} onClick={() => location.reload()}> Back to home screen </button>
@@ -344,11 +356,11 @@ function App() {
       </div>
     </>
   )
-  function submitHandler(rightOrWrong){
+  function submitHandler(rightOrWrong) {
     let sc = score
     console.log("In sumbit handler", rightOrWrong)
-    if(rightOrWrong == true){
-      setScore(s => s+swic)
+    if (rightOrWrong == true) {
+      setScore(s => s + swic)
       sc += swic
       setScoreWon(swic)
       console.log("RIGHT")
@@ -357,29 +369,32 @@ function App() {
       setRightOrWrong(false)
       setScoreWon(0)
     }
-    socket.current.emit("submit",{game:game,name:userName,answer:rightOrWrong,newScore:sc})
+    socket.current.emit("submit", { game: game, name: userName, answer: rightOrWrong, newScore: sc })
     setCreating("waitingForOthers")
     socket.current.on("leaderboardReturn", pin => {
-      console.log("PIN",pin)
-      if(pin == game){
+      console.log("PIN", pin)
+      if (pin == game) {
         setCreating("rightOrWrong")
         setSwic(1000)
       }
     })
     socket.current.on("gameoverReturn", pin => {
-      console.log("PIN",pin)
-      if(pin == game){
+      console.log("PIN", pin)
+      if (pin == game) {
         setCreating("done")
       }
     })
     socket.current.on("nextReturn", pin => {
-      console.log("PIN",pin)
-      if(pin == game){
+      console.log("papi", pin, game)
+      if (pin == game) {
         setCreating("questionTime")
+        intervalId.current = setInterval(() => {
+          if (swicRef.current > 500) { setSwic(s => s - 20) }
+        }, 1000)
         setQuestionIndex(questionIndex+1)
       }
     })
   }
 }
 
-export default App
+export default App  

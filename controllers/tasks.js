@@ -21,11 +21,9 @@ const io = socketio(server, {cors:{
 let games = {}
 
 io.on("connection", (socket) => {
-    console.log("New client connected");
-
     socket.on("join", (data) => {
         const { player, pin } = data;
-        console.log(player);
+        console.log("join:",player);
 
         if (!games[pin]) {
             return socket.emit("error", `Game with pin ${pin} does not exist`);
@@ -36,31 +34,35 @@ io.on("connection", (socket) => {
         games[pin].players.push({ name: player, score: 0 });
         socket.emit("joinReturn", { name: player, score: 0, quiz: games[pin].quiz }); 
         io.emit("joinReturnHost", { name: player, score: 0, pin: pin, quiz: games[pin].quiz });
-        console.log(games[pin].players)
-        console.log(games)
     })
 
     socket.on("gameOn", (pin) => {
         io.emit("gameOnReturn",pin)
+        console.log("game on:",pin);
     })
 
     socket.on("startGame", (pin) => {
         io.emit("startGameReturn",pin)
+        console.log("game started:",pin);
     })
 
     socket.on("submit", (obj) => {
+        console.log("Submit:",obj)
         io.emit("submitReturn",obj)
     })
 
     socket.on("leaderboard", (pin) => {
+        console.log("Leaderboard:",pin)
         io.emit("leaderboardReturn",pin)
     })
 
     socket.on("next", (pin) => {
+        console.log("Next question:",pin)
         io.emit("nextReturn",pin)
     })
 
     socket.on("gameover", (pin) => {
+        console.log("Game over:",pin)
         io.emit("gameoverReturn",pin)
     })
 }) 
