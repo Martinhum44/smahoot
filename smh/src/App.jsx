@@ -14,23 +14,24 @@ function App() {
   const [pin, setPin] = useState(null);
   const [players, setPlayers] = useState([]);
   const [user, setUser] = useState(null);
-  const [game, setGame] = useState(null)
-  const [gameQuestions, setGameQuestions] = useState(null)
-  const [userName, setUserName] = useState(null)
-  const [countdown, setCountdown] = useState(5)
-  const [questionIndex, setQuestionIndex] = useState(null)
-  const [score, setScore] = useState(null)
-  const [currentlyAnswered, setCurrentlyAnswered] = useState(null)
-  const [rightOrWrong, setRightOrWrong] = useState(null)
-  const [swic, setSwic] = useState(1000)
-  const [scoreWon, setScoreWon] = useState(1000)
-  const intervalId = useRef(null)
-  const playerData = useRef([])
-  const playerLength = useRef(0)
-  const gameQuestionLength = useRef(0)
-  const questionIndexRef = useRef(0)
-  const swicRef = useRef(1000)
-  socket.current = io("http://localhost:5000")
+  const [game, setGame] = useState(null);
+  const [gameQuestions, setGameQuestions] = useState(null);
+  const [userName, setUserName] = useState(null);
+  const [countdown, setCountdown] = useState(5);
+  const [questionIndex, setQuestionIndex] = useState(null);
+  const [score, setScore] = useState(0);
+  const [currentlyAnswered, setCurrentlyAnswered] = useState(0);
+  const [rightOrWrong, setRightOrWrong] = useState(null);
+  const [swic, setSwic] = useState(1000);
+  const [scoreWon, setScoreWon] = useState(1000);
+  const intervalId = useRef(null);
+  const playerData = useRef([]);
+  const playerLength = useRef(0);
+  const gameQuestionLength = useRef(0);
+  const questionIndexRef = useRef(0);
+  const swicRef = useRef(1000);
+
+  socket.current = io("http://localhost:5000");
 
   function doNothing() {}
 
@@ -50,47 +51,49 @@ function App() {
 
   useEffect(() => {
     if (gameQuestions != null) {
-      console.log("QSI:",questionIndex)
-      console.log(gameQuestions.questions[questionIndex])
+      console.log("QSI:", questionIndex);
+      console.log(gameQuestions.questions[questionIndex]);
     }
-    questionIndexRef.current = questionIndex
-  }, [questionIndex])
+    questionIndexRef.current = questionIndex;
+    clearInterval(intervalId.current);
+    console.log("question index CLEARED", questionIndex);
+  }, [questionIndex]);
 
   useEffect(() => {
-    gameQuestionLength.current = gameQuestions == null ? 0 : gameQuestions.questions.length
-  }, [gameQuestions])
+    gameQuestionLength.current = gameQuestions == null ? 0 : gameQuestions.questions.length;
+  }, [gameQuestions]);
 
   useEffect(() => {
-    swicRef.current = swic
-  }, [swic])
+    swicRef.current = swic;
+  }, [swic]);
 
   useEffect(() => {
     socket.current.on('joinReturnHost', (data) => {
       console.log('join return', data);
-      console.log(data.pin, pin)
+      console.log(data.pin, pin);
       if (data.pin == pin) {
-        console.log(data.pin, pin)
+        console.log(data.pin, pin);
         setPlayers(p => [...p, data.name]);
-        setGameQuestions(data.quiz)
+        setGameQuestions(data.quiz);
       }
     });
 
     function func(objReturned) {
-      console.log(objReturned)
+      console.log(objReturned);
       console.log("in func", objReturned.game, pin);
-      console.log(objReturned.game == pin)
+      console.log(objReturned.game == pin);
       if (objReturned.game == pin) {
-        const tempData = [...playerData.current, { name: objReturned.name, score: objReturned.newScore }]
-        playerData.current = tempData.sort((a, b) => b.score - a.score)
+        const tempData = [...playerData.current, { name: objReturned.name, score: objReturned.newScore }];
+        playerData.current = tempData.sort((a, b) => b.score - a.score);
         for (let i = 0; i < playerData.current.length; i++) {
-          playerData.current[i].place = i + 1
-          console.log(playerData.current[i].place)
+          playerData.current[i].place = i + 1;
+          console.log(playerData.current[i].place);
         }
         setCurrentlyAnswered(prevCount => {
           const newCount = prevCount + 1;
           console.log(newCount, playerLength.current);
           if (newCount === playerLength.current) {
-            console.log("LENGTH: " + gameQuestionLength.current, "INDEX:", questionIndexRef.current)
+            console.log("LENGTH: " + gameQuestionLength.current, "INDEX:", questionIndexRef.current);
             if (gameQuestionLength.current == questionIndexRef.current + 1) {
               socket.current.emit("gameover", pin);
               setCreating("gameover");
@@ -104,43 +107,45 @@ function App() {
         });
       }
     }
-    socket.current.on("submitReturn", func)
-  }, [pin])
+    socket.current.on("submitReturn", func);
+  }, [pin]);
 
   useEffect(() => {
-    console.log(countdown)
-    if (countdown == 0) {
-      socket.current.emit("startGame", pin)
-      return setCreating("questions")
+    console.log(countdown);
+    if (countdown === 0) {
+      socket.current.emit("startGame", pin);
+      return setCreating("questions");
     } else {
-      setQuestionIndex(0)
+      setQuestionIndex(0);
     }
-  }, [countdown]
-  )
+  }, [countdown]);
 
-  useEffect(() => { playerLength.current = players.length }, [players])
+  useEffect(() => {
+    playerLength.current = players.length;
+  }, [players]);
 
-  useEffect(
-    () => {
-      socket.current.on("gameOnReturn", (pinR) => {
-        console.log(pinR, game)
-        if (pinR == game) {
-          setCreating("playing")
-        }
-      })
+  useEffect(() => {
+    socket.current.on("gameOnReturn", (pinR) => {
+      console.log(pinR, game);
+      if (pinR == game) {
+        setCreating("playing");
+      }
+    });
 
-      socket.current.on("startGameReturn", (pinR) => {
-        console.log("papi", pinR, game)
-        if (pinR == game) {
-          setQuestionIndex(0)
-          setCreating("questionTime")
-          intervalId.current = setInterval(() => {
-            if (swicRef.current > 500) { setSwic(s => s - 20) }
-          }, 1000)
-        }
-      })
-    }
-    , [game])
+    socket.current.on("startGameReturn", (pinR) => {
+      console.log("papi", pinR, game);
+      if (pinR == game) {
+        setQuestionIndex(0);
+        setCreating("questionTime");
+        console.log(questionIndex);
+        intervalId.current = setInterval(() => {
+          if (swicRef.current > 500) {
+            setSwic(s => questionIndex == null ? 20 : s - Math.floor(20 / (questionIndex + 1)));
+          }
+        }, 1000);
+      }
+    });
+  }, [game]);
 
   function createQuestion() {
     if (questAmount.length === 0) {
@@ -161,6 +166,14 @@ function App() {
       alert('ERROR: ' + e.response.data.msg);
     }
   }
+
+  // Interval cleanup function
+  const clearGameInterval = () => {
+    if (intervalId.current) {
+      clearInterval(intervalId.current);
+      intervalId.current = null;
+    }
+  };
 
   return (
     <>
@@ -375,7 +388,6 @@ function App() {
       console.log("PIN", pin)
       if (pin == game) {
         setCreating("rightOrWrong")
-        setSwic(1000)
       }
     })
     socket.current.on("gameoverReturn", pin => {
@@ -387,10 +399,11 @@ function App() {
     socket.current.on("nextReturn", pin => {
       console.log("papi", pin, game)
       if (pin == game) {
-        setCreating("questionTime")
+        setSwic(1000)
         intervalId.current = setInterval(() => {
-          if (swicRef.current > 500) { setSwic(s => s - 20) }
+          if (swicRef.current > 500) { setSwic(s => questionIndex == null ? 20 : s - Math.floor(20 / (questionIndex + 1)));}
         }, 1000)
+        setCreating("questionTime")
         setQuestionIndex(questionIndex+1)
       }
     })
