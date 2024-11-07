@@ -22,7 +22,7 @@ function App() {
   const [score, setScore] = useState(0);
   const [currentlyAnswered, setCurrentlyAnswered] = useState(0);
   const [rightOrWrong, setRightOrWrong] = useState(null);
-  const [swic, setSwic] = useState(1000);
+  const swic = useRef(1000);
   const [scoreWon, setScoreWon] = useState(1000);
   const intervalId = useRef(null);
   const playerData = useRef([]);
@@ -62,10 +62,6 @@ function App() {
   useEffect(() => {
     gameQuestionLength.current = gameQuestions == null ? 0 : gameQuestions.questions.length;
   }, [gameQuestions]);
-
-  useEffect(() => {
-    swicRef.current = swic;
-  }, [swic]);
 
   useEffect(() => {
     socket.current.on('joinReturnHost', (data) => {
@@ -140,7 +136,7 @@ function App() {
         console.log(questionIndex);
         intervalId.current = setInterval(() => {
           if (swicRef.current > 500) {
-            setSwic(s => questionIndex == null ? 20 : s - Math.floor(20 / (questionIndex + 1)));
+            swic.current = questionIndex == null ? 20 : swic - Math.floor(20 / (questionIndex + 1));
           }
         }, 1000);
       }
@@ -310,7 +306,6 @@ function App() {
         <p>Question {questionIndex + 1}</p>
         <h3>{userName}'s Game | Score: {score}</h3>
         <h1 style={{ fontSize: "50px" }}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].title : ""}</h1>
-        <h2>Score won if correct: {swic}</h2>
         <button id="bigGreen" onClick={() => submitHandler(gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[0].rightOne : false)}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[0].body : ""}</button>
         <button id="bigBlue" onClick={() => submitHandler(gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[1].rightOne : false)}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[1].body : ""}</button>
         <button id="bigRed" onClick={() => submitHandler(gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[2].rightOne : false)}>{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[2].body : ""}</button>
@@ -373,9 +368,9 @@ function App() {
     let sc = score
     console.log("In sumbit handler", rightOrWrong)
     if (rightOrWrong == true) {
-      setScore(s => s + swic)
-      sc += swic
-      setScoreWon(swic)
+      setScore(s => s + swic.current)
+      sc += swic.current
+      setScoreWon(swic.current)
       console.log("RIGHT")
       setRightOrWrong(true)
     } else {
@@ -399,9 +394,9 @@ function App() {
     socket.current.on("nextReturn", pin => {
       console.log("papi", pin, game)
       if (pin == game) {
-        setSwic(1000)
+        swic.current = 1000
         intervalId.current = setInterval(() => {
-          if (swicRef.current > 500) { setSwic(s => questionIndex == null ? 20 : s - Math.floor(20 / (questionIndex + 1)));}
+          if (swicRef.current > 500) { swic.current = questionIndex == null ? 20 : swic - Math.floor(20 / (questionIndex + 1));;}
         }, 1000)
         setCreating("questionTime")
         setQuestionIndex(questionIndex+1)
