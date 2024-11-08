@@ -29,6 +29,7 @@ function App() {
   const playerLength = useRef(0);
   const gameQuestionLength = useRef(0);
   const questionIndexRef = useRef(0);
+  const time = useRef(0);
   const swicRef = useRef(1000);
 
   socket.current = io("http://localhost:5000");
@@ -136,8 +137,9 @@ function App() {
         console.log(questionIndex);
         intervalId.current = setInterval(() => {
           if (swicRef.current > 500) {
-            swic.current = questionIndex == null ? 20 : swic - Math.floor(20 / (questionIndex + 1));
+            swic.current = questionIndex == null ? 20 : swic.current - Math.floor(20 / (questionIndex + 1));
           }
+          time.current += 1
         }, 1000);
       }
     });
@@ -320,7 +322,8 @@ function App() {
       <div style={{ display: creating == "rightOrWrong" ? "block" : "none" }}>
         <h3>{userName}'s Game | Score: {score}</h3>
         <h1 style={{ fontSize: "120px", color: rightOrWrong ? "green" : "red" }}>{rightOrWrong ? "Correct :D" : "Incorrect :("}</h1>
-        <h1>+{scoreWon}</h1>
+        <h1>+{scoreWon} points</h1>
+        <h1>It took {time.current} seconds to answer</h1>
       </div>
 
       <div style={{ display: creating == "leaderboard" ? "block" : "none" }}>
@@ -355,7 +358,8 @@ function App() {
       <div style={{ display: creating == "done" ? "block" : "none" }}>
         <h3>{userName}'s Game | Final Score: {score}</h3>
         <h1 style={{ fontSize: "120px", color: rightOrWrong ? "green" : "red" }}>{rightOrWrong ? "Correct :D" : "Incorrect :("}</h1>
-        <h1>+{scoreWon}</h1>
+        <h1>+{scoreWon} points</h1>
+        <h1>It took {time.current} seconds to answer</h1>
         <center><div style={{ padding: "10px", backgroundColor: "lightgrey", borderRadius: "10px", width: "350px", marginBottom: "10px" }}>
           <h1>Game Over</h1>
           <h3>Check your placement on the host's screen!</h3>
@@ -395,8 +399,10 @@ function App() {
       console.log("papi", pin, game)
       if (pin == game) {
         swic.current = 1000
+        time.current = 0
         intervalId.current = setInterval(() => {
-          if (swicRef.current > 500) { swic.current = questionIndex == null ? 20 : swic - Math.floor(20 / (questionIndex + 1));;}
+          if (swicRef.current > 500) { swic.current = questionIndex == null ? 20 : swic.current - Math.floor(20 / (questionIndex + 1));}
+          time.current += 1
         }, 1000)
         setCreating("questionTime")
         setQuestionIndex(questionIndex+1)
