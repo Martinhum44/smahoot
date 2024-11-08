@@ -137,7 +137,7 @@ function App() {
         console.log(questionIndex);
         intervalId.current = setInterval(() => {
           if (swicRef.current > 500) {
-            swic.current = questionIndex == null ? 20 : swic.current - Math.floor(20 / (questionIndex + 1));
+            swic.current = questionIndex == null ? 20 : swic.current - 20;
           }
           time.current += 1
         }, 1000);
@@ -401,8 +401,9 @@ function App() {
         swic.current = 1000
         time.current = 0
         intervalId.current = setInterval(() => {
-          if (swicRef.current > 500) { swic.current = questionIndex == null ? 20 : swic.current - Math.floor(20 / (questionIndex + 1));}
+          if (swic.current > 500) { swic.current = questionIndex == null ? 20 : swic.current - Math.floor(20 / (questionIndex + 1));}
           time.current += 1
+          console.log("time",time.current)
         }, 1000)
         setCreating("questionTime")
         setQuestionIndex(questionIndex+1)
