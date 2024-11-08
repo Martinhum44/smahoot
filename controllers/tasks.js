@@ -5,6 +5,7 @@ const http = require("http")
 const express = require("express")
 const socketio = require("socket.io")
 const cors = require("cors")
+const { exists } = require("fs")
 
 const app2 = express()
 app2.use(cors({
@@ -47,8 +48,24 @@ io.on("connection", (socket) => {
     })
 
     socket.on("submit", (obj) => {
+        let newScore = 0
+
+        if(obj.answer){
+            games[obj.game].place += 1
+            if(games[obj.game].place == 1){
+                newScore = 1000
+            } else if (games[obj.game].place == 2) {
+                newScore = 850
+            } else if (games[obj.game].place == 3) {
+                newScore = 700
+            } else {
+                newScore = 500
+            }
+        }
+
         console.log("Submit:",obj)
-        io.emit("submitReturn",obj)
+        io.emit("submitReturnUser",{pin: obj.game, username: obj.name, answer: obj.answer, place: obj.answer ? games[obj.game].place : null, scoreWon: newScore, newScore: obj.existingScore+newScore})
+        io.emit("submitReturn",{...obj, newScore: obj.existingScore + newScore})
     })
 
     socket.on("leaderboard", (pin) => {
@@ -57,6 +74,7 @@ io.on("connection", (socket) => {
     })
 
     socket.on("next", (pin) => {
+        games[pin].place = 0
         console.log("Next question:",pin)
         io.emit("nextReturn",pin)
     })
@@ -123,7 +141,7 @@ const getQuiz = asyncW(async(req,res,next) => {
         throw new OurErrorVersion(`Quiz with name ${req.params.id} not found :(`, 404)
     }
     res.status(200).json({success:true,quiz:QUIZ,gamePin:code})
-    games[code] = {quiz:QUIZ, players: []}
+    games[code] = {quiz:QUIZ, players: [], place: 0}
 })
 
 module.exports = {createQuiz, getQuiz} 

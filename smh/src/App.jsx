@@ -22,15 +22,13 @@ function App() {
   const [score, setScore] = useState(0);
   const [currentlyAnswered, setCurrentlyAnswered] = useState(0);
   const [rightOrWrong, setRightOrWrong] = useState(null);
-  const swic = useRef(1000);
   const [scoreWon, setScoreWon] = useState(1000);
+  const [place, setPlace] = useState(null)
   const intervalId = useRef(null);
   const playerData = useRef([]);
   const playerLength = useRef(0);
   const gameQuestionLength = useRef(0);
   const questionIndexRef = useRef(0);
-  const time = useRef(0);
-  const swicRef = useRef(1000);
 
   socket.current = io("http://localhost:5000");
 
@@ -135,12 +133,6 @@ function App() {
         setQuestionIndex(0);
         setCreating("questionTime");
         console.log(questionIndex);
-        intervalId.current = setInterval(() => {
-          if (swicRef.current > 500) {
-            swic.current = questionIndex == null ? 20 : swic.current - 20;
-          }
-          time.current += 1
-        }, 1000);
       }
     });
   }, [game]);
@@ -323,7 +315,7 @@ function App() {
         <h3>{userName}'s Game | Score: {score}</h3>
         <h1 style={{ fontSize: "120px", color: rightOrWrong ? "green" : "red" }}>{rightOrWrong ? "Correct :D" : "Incorrect :("}</h1>
         <h1>+{scoreWon} points</h1>
-        <h1>It took {time.current} seconds to answer</h1>
+        <h1>{place == null ? "" : `You were number ${place} to answer correctly!`}</h1>
       </div>
 
       <div style={{ display: creating == "leaderboard" ? "block" : "none" }}>
@@ -359,7 +351,7 @@ function App() {
         <h3>{userName}'s Game | Final Score: {score}</h3>
         <h1 style={{ fontSize: "120px", color: rightOrWrong ? "green" : "red" }}>{rightOrWrong ? "Correct :D" : "Incorrect :("}</h1>
         <h1>+{scoreWon} points</h1>
-        <h1>It took {time.current} seconds to answer</h1>
+        <h1>{place == null ? "" : `You were number ${place} to answer correctly!`}</h1>
         <center><div style={{ padding: "10px", backgroundColor: "lightgrey", borderRadius: "10px", width: "350px", marginBottom: "10px" }}>
           <h1>Game Over</h1>
           <h3>Check your placement on the host's screen!</h3>
@@ -369,20 +361,23 @@ function App() {
     </>
   )
   function submitHandler(rightOrWrong) {
-    let sc = score
     console.log("In sumbit handler", rightOrWrong)
-    if (rightOrWrong == true) {
-      setScore(s => s + swic.current)
-      sc += swic.current
-      setScoreWon(swic.current)
-      console.log("RIGHT")
-      setRightOrWrong(true)
-    } else {
-      setRightOrWrong(false)
-      setScoreWon(0)
-    }
-    socket.current.emit("submit", { game: game, name: userName, answer: rightOrWrong, newScore: sc })
+    socket.current.emit("submit", { game: game, name: userName, answer: rightOrWrong, existingScore: score})
     setCreating("waitingForOthers")
+    socket.current.on("submitReturnUser", (obj) => {
+      if (obj.pin == game && userName == obj.username){
+        if (rightOrWrong == true) {
+          setScore(score+obj.scoreWon)
+          setScoreWon(obj.scoreWon)
+          setPlace(obj.place)
+          console.log("RIGHT")
+          setRightOrWrong(true)
+        } else {
+          setRightOrWrong(false)
+          setScoreWon(0)
+        }
+      }
+    })
     socket.current.on("leaderboardReturn", pin => {
       console.log("PIN", pin)
       if (pin == game) {
@@ -398,13 +393,6 @@ function App() {
     socket.current.on("nextReturn", pin => {
       console.log("papi", pin, game)
       if (pin == game) {
-        swic.current = 1000
-        time.current = 0
-        intervalId.current = setInterval(() => {
-          if (swic.current > 500) { swic.current = questionIndex == null ? 20 : swic.current - Math.floor(20 / (questionIndex + 1));}
-          time.current += 1
-          console.log("time",time.current)
-        }, 1000)
         setCreating("questionTime")
         setQuestionIndex(questionIndex+1)
       }
