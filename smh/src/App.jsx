@@ -374,6 +374,7 @@ function App() {
           setRightOrWrong(true)
         } else {
           setRightOrWrong(false)
+          setScore(score+obj.scoreWon)
           setScoreWon(0)
         }
       }
