@@ -29,10 +29,10 @@ function App() {
   const playerLength = useRef(0);
   const gameQuestionLength = useRef(0);
   const questionIndexRef = useRef(0);
+  const corr = useRef(0)
+  const incorr = useRef(0)
 
   socket.current = io("http://localhost:5000");
-
-  function doNothing() {}
 
   useEffect(() => {
     let aok = true;
@@ -79,6 +79,11 @@ function App() {
       console.log(objReturned.game == pin);
       if (objReturned.game == pin) {
         const tempData = [...playerData.current, { name: objReturned.name, score: objReturned.newScore }];
+        if(objReturned.answer){
+          corr.current += 1
+        } else {
+          incorr.current += 1
+        }
         playerData.current = tempData.sort((a, b) => b.score - a.score);
         for (let i = 0; i < playerData.current.length; i++) {
           playerData.current[i].place = i + 1;
@@ -156,14 +161,6 @@ function App() {
       alert('ERROR: ' + e.response.data.msg);
     }
   }
-
-  // Interval cleanup function
-  const clearGameInterval = () => {
-    if (intervalId.current) {
-      clearInterval(intervalId.current);
-      intervalId.current = null;
-    }
-  };
 
   return (
     <>
@@ -327,11 +324,16 @@ function App() {
           <h3>5 | {playerData.current[4].name} | {playerData.current[4].score}</h3></> : playerData.current.map(player => {
             return <h3><span style={{ color: player.place == 1 ? "gold" : (player.place == 2 ? "silver" : (player.place == 3 ? "brown" : "black")) }}>{player.place}</span> | {player.name} | {player.score}</h3>
           })}</div></center>
+        <h3 style={{color:"green"}}>{corr.current} smashooter{corr.current == 1 ? "" : "s"} answered correctly</h3>
+        <h3 style={{color:"red"}}>{incorr.current} smashooter{incorr.current == 1 ? "" : "s"} answered incorrectly</h3>
+        
         <button id="blue5" style={{ width: "250px" }} onClick={() => {
           socket.current.emit("next", pin)
           playerData.current = []
           setQuestionIndex(q => q + 1)
           setCreating("questions")
+          corr.current = 0
+          incorr.current = 0
         }}> Next question </button>
       </div>
 
@@ -344,6 +346,8 @@ function App() {
           <h3>5 | {playerData.current[4].name} | {playerData.current[4].score}</h3></> : playerData.current.map(player => {
             return <h3><span style={{ color: player.place == 1 ? "gold" : (player.place == 2 ? "silver" : (player.place == 3 ? "brown" : "black")) }}>{player.place}</span> | {player.name} | {player.score}</h3>
           })}</div></center>
+        <h3 style={{color:"green"}}>{corr.current} smashooter{corr.current == 1 ? "" : "s"} answered correctly</h3>
+        <h3 style={{color:"red"}}>{incorr.current} smashooter{incorr.current == 1 ? "" : "s"} answered incorrectly</h3>
         <button id="blue5" style={{ width: "250px" }} onClick={() => location.reload()}> Back to home screen </button>
       </div>
 
@@ -371,7 +375,7 @@ function App() {
           setScoreWon(obj.scoreWon)
           setPlace(obj.place)
           console.log("RIGHT")
-          setRightOrWrong(true)
+          setRightOrWrong(true) 
         } else {
           setRightOrWrong(false)
           setScore(score+obj.scoreWon)
