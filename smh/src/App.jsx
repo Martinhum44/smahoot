@@ -21,8 +21,8 @@ function App() {
   const [questionIndex, setQuestionIndex] = useState(null);
   const [score, setScore] = useState(0);
   const [currentlyAnswered, setCurrentlyAnswered] = useState(0);
-  const [rightOrWrong, setRightOrWrong] = useState(null);
-  const [scoreWon, setScoreWon] = useState(1000);
+  const [rightOrWrong, setRightOrWrong] = useState(false);
+  const [scoreWon, setScoreWon] = useState(0);
   const [place, setPlace] = useState(null)
   const intervalId = useRef(null);
   const playerData = useRef([]);
@@ -140,6 +140,28 @@ function App() {
         console.log(questionIndex);
       }
     });
+
+    socket.current.on("leaderboardReturn", pin => {
+      console.log("PIN", pin)
+      if (pin == game) {
+        console.log("LBR")
+        setCreating("rightOrWrong")
+      }
+    })
+
+    socket.current.on("gameoverReturn", pin => {
+      console.log("PIN", pin)
+      if (pin == game) {
+        setCreating("done")
+      }
+    })
+    socket.current.on("nextReturn", pin => {
+      console.log("papi", pin, game)
+      if (pin == game) {
+        setCreating("questionTime")
+        setQuestionIndex(questionIndexRef.current+1)
+      }
+    })
   }, [game]);
 
   function createQuestion() {
@@ -291,6 +313,11 @@ function App() {
         <button id="bigBlue">{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[1].body : ""}</button>
         <button id="bigRed">{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[2].body : ""}</button>
         <button id="bigYellow">{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[3].body : ""}</button>
+        <button id="blue5" style={{ width: "250px", marginTop:"20px"}} onClick={() => {
+          socket.current.emit("leaderboard", pin)
+          setCreating("leaderboard")
+          setCurrentlyAnswered(0)
+        }}> Skip </button>
       </div>
 
       <div style={{ display: creating == "questionTime" ? "block" : "none" }}>
@@ -381,25 +408,6 @@ function App() {
           setScore(score+obj.scoreWon)
           setScoreWon(0)
         }
-      }
-    })
-    socket.current.on("leaderboardReturn", pin => {
-      console.log("PIN", pin)
-      if (pin == game) {
-        setCreating("rightOrWrong")
-      }
-    })
-    socket.current.on("gameoverReturn", pin => {
-      console.log("PIN", pin)
-      if (pin == game) {
-        setCreating("done")
-      }
-    })
-    socket.current.on("nextReturn", pin => {
-      console.log("papi", pin, game)
-      if (pin == game) {
-        setCreating("questionTime")
-        setQuestionIndex(questionIndex+1)
       }
     })
   }
