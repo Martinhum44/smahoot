@@ -70,6 +70,7 @@ function App() {
         console.log(data.pin, pin);
         setPlayers(p => [...p, data.name]);
         setGameQuestions(data.quiz);
+        playerData.current.push({name: data.name, score: 0})
       }
     });
 
@@ -77,19 +78,27 @@ function App() {
       console.log(objReturned);
       console.log("in func", objReturned.game, pin);
       console.log(objReturned.game == pin);
+      console.log(objReturned.game, pin)
       if (objReturned.game == pin) {
-        const tempData = [...playerData.current, { name: objReturned.name, score: objReturned.newScore }];
+        const index = playerData.current.findIndex(obj => {
+          console.log(obj.name, objReturned.name)
+          return obj.name == objReturned.name
+        })
+        console.log("INDEX:",index)
+        playerData.current[index].score = objReturned.newScore
         if(objReturned.answer){
           corr.current += 1
         } else {
           incorr.current += 1
         }
-        playerData.current = tempData.sort((a, b) => b.score - a.score);
+        playerData.current = playerData.current.sort((a, b) => b.score - a.score);
+        console.log( playerData.current)
         for (let i = 0; i < playerData.current.length; i++) {
           playerData.current[i].place = i + 1;
           console.log(playerData.current[i].place);
         }
         setCurrentlyAnswered(prevCount => {
+          console.log("innere")
           const newCount = prevCount + 1;
           console.log(newCount, playerLength.current);
           if (newCount === playerLength.current) {
@@ -160,6 +169,9 @@ function App() {
       if (pin == game) {
         setCreating("questionTime")
         setQuestionIndex(questionIndexRef.current+1)
+        setScoreWon(0)
+        setRightOrWrong(false)
+        setPlace(null)
       }
     })
   }, [game]);
@@ -314,8 +326,12 @@ function App() {
         <button id="bigRed">{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[2].body : ""}</button>
         <button id="bigYellow">{gameQuestions != null && gameQuestions.questions[questionIndex] ? gameQuestions.questions[questionIndex].answers[3].body : ""}</button>
         <button id="blue5" style={{ width: "250px", marginTop:"20px"}} onClick={() => {
-          socket.current.emit("leaderboard", pin)
-          setCreating("leaderboard")
+          setCreating(gameQuestions.questions.length == questionIndex+1 ? "gameover" : "leaderboard")
+          if(gameQuestions.questions.length == questionIndex+1){
+            socket.current.emit("gameover", pin)
+          } else {
+            socket.current.emit("leaderboard", pin)
+          }
           setCurrentlyAnswered(0)
         }}> Skip </button>
       </div>
@@ -356,7 +372,6 @@ function App() {
         
         <button id="blue5" style={{ width: "250px" }} onClick={() => {
           socket.current.emit("next", pin)
-          playerData.current = []
           setQuestionIndex(q => q + 1)
           setCreating("questions")
           corr.current = 0
