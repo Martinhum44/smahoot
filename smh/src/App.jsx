@@ -332,7 +332,7 @@ function App() {
           } else {
             socket.current.emit("leaderboard", pin)
           }
-          incorr.current += playerLength.current - corr.current
+          incorr.current = playerLength.current - corr.current
           setCurrentlyAnswered(0)
         }}> Skip </button>
       </div>
